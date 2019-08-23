@@ -14,6 +14,10 @@
 #include <fstream>
 #include <array>
 
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -31,6 +35,35 @@
 #define STB_IMAGE_IMPLEMENTATION
 
 #include <stb/stb_image.h>
+
+
+bool DoTheImportThing( const std::string& pFile)
+{
+	// Create an instance of the Importer class
+	Assimp::Importer importer;
+
+	// And have it read the given file with some example postprocessing
+	// Usually - if speed is not the most important aspect for you - you'll
+	// probably to request more postprocessing than we do in this example.
+	const aiScene* scene = importer.ReadFile( pFile,
+	                                          aiProcess_CalcTangentSpace       |
+	                                          aiProcess_Triangulate            |
+	                                          aiProcess_JoinIdenticalVertices  |
+	                                          aiProcess_SortByPType);
+
+	// If the import failed, report it
+	if( !scene)
+	{
+//		DoTheErrorLogging( importer.GetErrorString());
+		return false;
+	}
+
+	// Now we can access the file's contents.
+//	DoTheSceneProcessing( scene);
+
+	// We're done. Everything will be cleaned up by the importer destructor
+	return true;
+}
 
 VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
                                       const VkAllocationCallbacks *pAllocator,
@@ -449,8 +482,8 @@ private:
 	}
 
 	void createGraphicsPipeline() {
-		auto vert{readFile("shaders/sprvs/depth_vert.spv")};
-		auto frag{readFile("shaders/sprvs/textured_frag.spv")};
+		auto vert{readFile("../../shaders/sprvs/depth_vert.spv")};
+		auto frag{readFile("../../shaders/sprvs/textured_frag.spv")};
 		auto verMod{createShaderModule(vert)};
 		auto fraMod{createShaderModule(frag)};
 		auto bindingDescription = Vertex::getBindingDescription();
@@ -1119,7 +1152,7 @@ private:
 
 	void createTextureImage() {
 		int texWidth, texHeight, texChannels;
-		stbi_uc *pixels = stbi_load("resources/textures/texture.jpg", &texWidth, &texHeight, &texChannels,
+		stbi_uc *pixels = stbi_load("../textures/texture.jpg", &texWidth, &texHeight, &texChannels,
 		                            STBI_rgb_alpha);
 		VkDeviceSize imageSize = texWidth * texHeight * 4;
 
