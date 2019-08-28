@@ -5,7 +5,7 @@
 #include "TriangleApplication.h"
 
 
-bool DoTheImportThing(const std::string &pFile) {
+bool TriangleApplication::readModelFile(const std::string &pFile) {
 	// Create an instance of the Importer class
 	Assimp::Importer importer;
 
@@ -13,19 +13,25 @@ bool DoTheImportThing(const std::string &pFile) {
 	// Usually - if speed is not the most important aspect for you - you'll
 	// probably to request more postprocessing than we do in this example.
 	const aiScene *scene = importer.ReadFile(pFile,
-	                                         aiProcess_CalcTangentSpace |
-	                                         aiProcess_Triangulate |
-	                                         aiProcess_JoinIdenticalVertices |
-	                                         aiProcess_SortByPType);
+//0
+//                                             aiProcess_CalcTangentSpace |
+                                             aiProcess_Triangulate |
+//                                             aiProcess_JoinIdenticalVertices |
+//                                             aiProcess_SortByPType |
+                                             aiProcess_FlipUVs |
+                                             //	                                         aiProcess_FlipWindingOrder |
+                                             0
+	);
 
 	// If the import failed, report it
 	if (!scene) {
+		std::cerr << "Could not read file" << std::endl;
 //		DoTheErrorLogging( importer.GetErrorString());
 		return false;
 	}
 
 	// Now we can access the file's contents.
-//	DoTheSceneProcessing( scene);
+	processSceneObject(scene);
 
 	// We're done. Everything will be cleaned up by the importer destructor
 	return true;
@@ -384,7 +390,7 @@ VkImageView TriangleApplication::createImageView(VkImage image, VkFormat format,
 
 void TriangleApplication::createTextureImage() {
 	int texWidth, texHeight, texChannels;
-	stbi_uc *pixels = stbi_load("../textures/texture.jpg", &texWidth, &texHeight, &texChannels,
+	stbi_uc *pixels = stbi_load("../textures/chalet.jpg", &texWidth, &texHeight, &texChannels,
 	                            STBI_rgb_alpha);
 	VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth * texHeight * 4);
 
@@ -608,6 +614,7 @@ void TriangleApplication::createIndexBuffer() {
 }
 
 void TriangleApplication::createVertexBuffer() {
+	std::cout << "I have " << vertices.size() << " vertices" << std::endl;
 	VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 
 	VkBuffer stagingBuffer;
@@ -819,7 +826,7 @@ void TriangleApplication::createCommandBuffers() {
 		VkBuffer vertexBuffers[] = {vertexBuffer};
 		VkDeviceSize offsets[] = {0};
 		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
-		vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+		vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1,
 		                        &descriptorSets[i], 0, nullptr);
 		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
@@ -1253,6 +1260,7 @@ void TriangleApplication::initVulkanAfterPipeline() {
 	createTextureImage();
 	createTextureImageView();
 	createTextureSampler();
+	readModelFile("../models/chalet.obj");
 	createVertexBuffer();
 	createIndexBuffer();
 	createUniformBuffers();
@@ -1402,4 +1410,59 @@ void TriangleApplication::createGraphicsPipelineFromDescriptions(VkVertexInputBi
 	vkDestroyShaderModule(device, verMod, nullptr);
 	vkDestroyShaderModule(device, fraMod, nullptr);
 
+}
+
+void TriangleApplication::processSceneObject(const aiScene *scene) {
+	using namespace std;
+	cout << "There are: " << scene->mNumMeshes << " meshes stored." << endl;
+	auto root = scene->mRootNode;
+	cout << "Root has " << root->mNumChildren << " children." << endl;
+	auto mesh = scene->mMeshes[0];
+	cout << "Child of root:" << endl;
+	cout << "has # " << root->mChildren[0]->mNumChildren << endl;
+	auto transformed = root->mChildren[0]->mTransformation;
+
+	cout << "There are: " << scene->mNumMaterials << " materials" << endl;
+//	auto transformed = root->mTransformation;
+	bool hasTexCoords{false};
+	if (mesh->HasTextureCoords(0)) {
+		cout << "The given mesh has texture coordinates" << endl;
+		cout << "There are " << mesh->GetNumUVChannels() << " UV channels" << endl;
+		hasTexCoords = {true};
+	}
+	if (mesh->HasVertexColors(0)) {
+		cout << "The given mesh has vertex colors" << endl;
+	}
+	cout << "Going to read in: " << mesh->mNumVertices << " amount of vertices." << endl;
+	vertices.resize(mesh->mNumVertices);
+	indices.clear();
+	int channel = 0;
+	cout << "Using channel " << channel << " for getting UV coord" << endl;
+	for (size_t i{}; i < mesh->mNumVertices; i++) {
+		Vertex toAdd{};
+//		cout << "Reading in Vertex #: " << i << endl;
+		auto vertex_point = mesh->mVertices[i];
+		vertex_point *= transformed;
+		glm::vec3 position{vertex_point[0], vertex_point[1], vertex_point[2]};
+//		cout << "Position of this is: " << position.x << ", " << position.y << ", " << position.z << endl;
+		toAdd.pos = position;
+		toAdd.color = {};
+//		cout << "Reading in texture coordinate at: " << i << std::endl;
+		glm::vec2 tC = hasTexCoords ? glm::vec2{mesh->mTextureCoords[channel][i][0],
+		                                        mesh->mTextureCoords[channel][i][1]}
+		                            : glm::vec2{};
+//		cout << "Resulting tex coord: " << tC.x << ", " << tC.y << endl;
+		toAdd.texCoord = tC;
+//		cout << "Read in coordinate." << endl;
+		vertices[i] = toAdd;
+//		cout << "Pushed back coordinate" << endl;
+	}
+	cout << "There are now " << vertices.size() << " vertices read in" << endl;
+	for (size_t i{}; i < mesh->mNumFaces; i++) {
+//		cout << "Face #: " << i << endl;
+		for (size_t j{}; j < mesh->mFaces[i].mNumIndices; j++) {
+//			cout << "Indice: " << j << " is: " << mesh->mFaces[i].mIndices[j] << endl;
+			indices.push_back(mesh->mFaces[i].mIndices[j]);
+		}
+	}
 }
