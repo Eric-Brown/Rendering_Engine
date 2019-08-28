@@ -2,22 +2,21 @@
 // Created by alexa on 5/18/2019.
 //
 
-
+#define STB_IMAGE_IMPLEMENTATION
 #define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
-
-#include <glm/glm.hpp>
-
-#include "Triangleapplication.h"
+#define GLFW_INCLUDE_VULKAN
+#include "CommonIncludes.h"
+#include "TriangleApplication.h"
 #include <iostream>
 #include <stdexcept>
-#include <vulkan/vulkan.h>
 
 
 
 int main(int argc, char **argv) {
 	using namespace std;
-	triangleapplication app;
+	TriangleApplication app;
 	try {
 		app.run();
 	}
