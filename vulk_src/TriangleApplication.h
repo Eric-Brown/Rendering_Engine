@@ -117,10 +117,10 @@ private:
 		std::vector<VkPresentModeKHR> presentModes;
 	};
 
-	static inline const std::vector<const char *> requiredDeviceExtensions{
+	static inline constexpr std::array<const char *,1> requiredDeviceExtensions{
 			VK_KHR_SWAPCHAIN_EXTENSION_NAME
 	};
-	static inline const std::vector<const char *> validationLayers{
+	static inline constexpr std::array<const char *,1> validationLayers{
 			"VK_LAYER_KHRONOS_validation"
 	};
 	// Done so that validation can be toggled in the future
@@ -255,6 +255,7 @@ private:
 	bool hasStencilComponent(VkFormat format);
 
 	VkFormat findDepthFormat();
+	void generateMipmaps(VkImage image, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
 
 
 	VkFormat
