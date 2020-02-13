@@ -170,6 +170,11 @@ private:
 	VkImage depthImage;
 	VkDeviceMemory depthImageMemory;
 	VkImageView depthImageView;
+	VkImage colorImage;
+	VkDeviceMemory colorImageMemory;
+	VkImageView colorImageView;
+
+	VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
 
 	std::vector<VkBuffer> uniformBuffers;
 	std::vector<VkDeviceMemory> uniformBuffersMemory;
@@ -202,7 +207,7 @@ private:
 
 	void createGraphicsPipelineFromDescriptions(VkVertexInputBindingDescription &bindingDescription,
 	                                            std::array<VkVertexInputAttributeDescription, 3> &attributeDescriptions);
-
+	VkSampleCountFlagBits getMaxUsableSampleCount();
 
 	void createFramebuffers();
 
@@ -236,7 +241,9 @@ private:
 
 	void createDescriptorSets();
 
-	void createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkFormat format, VkImageTiling tiling,
+	void createColorResources();
+
+	void createImage(uint32_t width, uint32_t height, uint32_t mipLevels,  VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling,
 	                 VkImageUsageFlags usage,
 	                 VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &imageMemory);
 
