@@ -13,13 +13,13 @@ bool TriangleApplication::readModelFile(const std::string &pFile) {
 	// probably to request more postprocessing than we do in this example.
 	const aiScene *scene = importer.ReadFile(pFile,
 	                                         aiProcess_ValidateDataStructure | // Validates imported structure
-//	                                         aiProcess_MakeLeftHanded |
+	                                         //	                                         aiProcess_MakeLeftHanded |
 	                                         //	                                         	                                         aiProcess_FlipWindingOrder |
 	                                         //                                             aiProcess_PreTransformVertices |
-	                                         	                                         aiProcess_RemoveRedundantMaterials | // Removes duplicated materials
+	                                         aiProcess_RemoveRedundantMaterials | // Removes duplicated materials
 	                                         //	                                         aiProcess_FindInstances |
 	                                         //	                                         aiProcess_RemoveComponent |
-	                                                                                      aiProcess_FindDegenerates |
+	                                         aiProcess_FindDegenerates |
 	                                         //	                                         aiProcess_GenUVCoords |
 	                                         aiProcess_Triangulate |
 	                                         aiProcess_FlipUVs |
@@ -216,8 +216,8 @@ void TriangleApplication::updateUniformBuffer(uint32_t currentImage) {
 	auto currentTime = std::chrono::high_resolution_clock::now();
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 	UniformBufferObject ubo = {};
-	ubo.model = glm::rotate(glm::mat4(1.0f), time*0.5f * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	ubo.view = glm::lookAt(glm::vec3(5.0f, 5.0f, 12.0f), glm::vec3(0.0f, 0.0f, 10.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.model = glm::rotate(glm::mat4(1.0f), time * 0.5f * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.view = glm::lookAt(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	ubo.proj = glm::perspective(glm::radians(90.0f), swapChainExtent.width / (float) swapChainExtent.height, 0.1f,
 	                            40.0f);
 	ubo.proj[1][1] *= -1;
@@ -330,12 +330,12 @@ void TriangleApplication::createInstance() {
 
 void TriangleApplication::createDepthResources() {
 	VkFormat depthFormat = findDepthFormat();
-	createImage(swapChainExtent.width, swapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL,
+	createImage(swapChainExtent.width, swapChainExtent.height, 1, depthFormat, VK_IMAGE_TILING_OPTIMAL,
 	            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage,
 	            depthImageMemory);
-	depthImageView = createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+	depthImageView = createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
 	transitionImageLayout(depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED,
-	                      VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+	                      VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1);
 }
 
 VkFormat TriangleApplication::findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling,
@@ -377,19 +377,20 @@ void TriangleApplication::createTextureSampler() {
 	samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
 	samplerInfo.unnormalizedCoordinates = VK_FALSE;
 	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-	samplerInfo.mipLodBias = 0.0f;
-	samplerInfo.minLod = 0.0f;
-	samplerInfo.maxLod = 0.0f;
+	samplerInfo.minLod = 0.0f; // Optional
+	samplerInfo.maxLod = static_cast<float>(mipLevels);
+	samplerInfo.mipLodBias = 0.0f; // Optional
 	if (vkCreateSampler(device, &samplerInfo, nullptr, &textureSampler) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create texture sampler!");
 	}
 }
 
 void TriangleApplication::createTextureImageView() {
-	textureImageView = createImageView(textureImage, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
+	textureImageView = createImageView(textureImage, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
 }
 
-VkImageView TriangleApplication::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) {
+VkImageView TriangleApplication::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags,
+                                                 uint32_t mipLevels) {
 	VkImageViewCreateInfo viewInfo = {};
 	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 	viewInfo.image = image;
@@ -397,7 +398,7 @@ VkImageView TriangleApplication::createImageView(VkImage image, VkFormat format,
 	viewInfo.format = format;
 	viewInfo.subresourceRange.aspectMask = aspectFlags;
 	viewInfo.subresourceRange.baseMipLevel = 0;
-	viewInfo.subresourceRange.levelCount = 1;
+	viewInfo.subresourceRange.levelCount = mipLevels;
 	viewInfo.subresourceRange.baseArrayLayer = 0;
 	viewInfo.subresourceRange.layerCount = 1;
 
@@ -411,10 +412,11 @@ VkImageView TriangleApplication::createImageView(VkImage image, VkFormat format,
 
 void TriangleApplication::createTextureImage() {
 	int texWidth, texHeight, texChannels;
-	stbi_uc *pixels = stbi_load("../models/the-porcelain-room/source/tex_u1_v1.jpg", &texWidth, &texHeight,
+	stbi_uc *pixels = stbi_load("../textures/chalet.jpg", &texWidth, &texHeight,
 	                            &texChannels,
 	                            STBI_rgb_alpha);
-	VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth * texHeight * 4);
+	mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
+	auto imageSize = static_cast<VkDeviceSize>(texWidth * texHeight * 4);
 
 	if (!pixels) {
 		throw std::runtime_error("failed to load texture image!");
@@ -429,16 +431,14 @@ void TriangleApplication::createTextureImage() {
 	memcpy(data, pixels, static_cast<size_t>(imageSize));
 	vkUnmapMemory(device, stagingBufferMemory);
 	stbi_image_free(pixels);
-	createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
-	            VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-	            textureImage, textureImageMemory);
+	createImage(texWidth, texHeight, mipLevels, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+	            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+	            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
 
 	transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED,
-	                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-	copyBufferToImage(stagingBuffer, textureImage, static_cast<uint32_t>(texWidth),
-	                  static_cast<uint32_t>(texHeight));
-	transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-	                      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels);
+	copyBufferToImage(stagingBuffer, textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
+	generateMipmaps(textureImage, VK_FORMAT_R8G8B8A8_UNORM, texWidth, texHeight, mipLevels);
 	vkDestroyBuffer(device, stagingBuffer, nullptr);
 	vkFreeMemory(device, stagingBufferMemory, nullptr);
 }
@@ -476,7 +476,8 @@ VkCommandBuffer TriangleApplication::beginSingleTimeCommands() {
 	return commandBuffer;
 }
 
-void TriangleApplication::createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling,
+void TriangleApplication::createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkFormat format,
+                                      VkImageTiling tiling,
                                       VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage &image,
                                       VkDeviceMemory &imageMemory) {
 	VkImageCreateInfo imageInfo = {};
@@ -485,7 +486,7 @@ void TriangleApplication::createImage(uint32_t width, uint32_t height, VkFormat 
 	imageInfo.extent.width = width;
 	imageInfo.extent.height = height;
 	imageInfo.extent.depth = 1;
-	imageInfo.mipLevels = 1;
+	imageInfo.mipLevels = mipLevels;
 	imageInfo.arrayLayers = 1;
 	imageInfo.format = format;
 	imageInfo.tiling = tiling;
@@ -694,7 +695,7 @@ void TriangleApplication::copyBufferToImage(VkBuffer buffer, VkImage image, uint
 }
 
 void TriangleApplication::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout,
-                                                VkImageLayout newLayout) {
+                                                VkImageLayout newLayout, uint32_t mipLevels) {
 	VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
 	VkImageMemoryBarrier barrier = {};
@@ -706,7 +707,7 @@ void TriangleApplication::transitionImageLayout(VkImage image, VkFormat format, 
 	barrier.image = image;
 	barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 	barrier.subresourceRange.baseMipLevel = 0;
-	barrier.subresourceRange.levelCount = 1;
+	barrier.subresourceRange.levelCount = mipLevels;
 	barrier.subresourceRange.baseArrayLayer = 0;
 	barrier.subresourceRange.layerCount = 1;
 	barrier.srcAccessMask = 0; // TODO
@@ -981,7 +982,7 @@ void TriangleApplication::createImageViews() {
 	swapChainImageViews.resize(swapChainImages.size());
 	for (size_t i = 0; i < swapChainImages.size(); i++) {
 		swapChainImageViews[i] = createImageView(swapChainImages[i], swapChainImageFormat,
-		                                         VK_IMAGE_ASPECT_COLOR_BIT);
+		                                         VK_IMAGE_ASPECT_COLOR_BIT, 1);
 	}
 }
 
@@ -1286,8 +1287,7 @@ void TriangleApplication::initVulkanAfterPipeline() {
 	createTextureImage();
 	createTextureImageView();
 	createTextureSampler();
-	readModelFile("../models/the-porcelain-room/source/model.obj");
-//	readModelFile("../models/the-porcelain-room/model.obj");
+	readModelFile("../models/chalet.obj");
 	createVertexBuffer();
 	createIndexBuffer();
 	createUniformBuffers();
@@ -1457,7 +1457,6 @@ void TriangleApplication::processSceneObject(const aiScene *scene) {
 	}
 	auto material = scene->mMaterials[0];
 	cout << "There are: " << scene->mNumMaterials << " materials" << endl;
-//	auto transformed = root->mTransformation;
 	bool hasTexCoords{false};
 	if (mesh->HasTextureCoords(0)) {
 		cout << "The given mesh has texture coordinates" << endl;
@@ -1475,42 +1474,105 @@ void TriangleApplication::processSceneObject(const aiScene *scene) {
 	for (size_t i{}; i < mesh->mNumVertices; i++) {
 		auto vertex_point = mesh->mVertices[i];
 		auto color_point = mesh->mTextureCoords[channel][i];
-		Vertex toAdd{{vertex_point[2], vertex_point[0], vertex_point[1]},
+		Vertex toAdd{{vertex_point[0], vertex_point[1], vertex_point[2]},
 		             {1.0f,            1.0f,            1.0f},
 		             {color_point[0],
 		                               color_point[1]}};
-//		cout << "Reading in Vertex #: " << i << endl;
 
-//		vertex_point *= transformed;
-//		glm::vec3 position;
-//		cout << "Position of this is: " << position.x << ", " << position.y << ", " << position.z << endl;
-//		toAdd.pos = position;
-//		toAdd.color = {1.0f, 1.0f, 1.0f};
-//		cout << "Reading in texture coordinate at: " << i << std::endl;
-//		glm::vec2 tC = hasTexCoords ? glm::vec2
-//		                            : glm::vec2{};
-//		cout << "Resulting tex coord: " << tC.x << ", " << tC.y << endl;
-//		toAdd.texCoord = tC;
-//		cout << "Read in coordinate." << endl;
 		vertices[i] = toAdd;
-//		cout << "Pushed back coordinate" << endl;
+
 	}
 	cout << "There are now " << vertices.size() << " vertices read in" << endl;
 	cout << "There are " << mesh->mNumFaces << " number of faces." << endl;
 	for (size_t i{}; i < mesh->mNumFaces; i++) {
-
-//		cout << "Face #: " << i << endl;
-		if (mesh->mFaces[i].mNumIndices != 3) {
-			cout << "Maybe here" << endl;
-		}
-//		cout << "Face #" << i << " is..." << endl;
 		for (size_t j{}; j < mesh->mFaces[i].mNumIndices; j++) {
-			size_t index{mesh->mFaces[i].mIndices[j]};
-//			cout << "Indice: " << j << " is: " << index << endl;
 			indices.push_back(mesh->mFaces[i].mIndices[j]);
 		}
 	}
 	cout << "There are now: " << indices.size() << " number of indices" << endl;
 
 
+}
+
+void TriangleApplication::generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight,
+                                          uint32_t mipLevels) {
+	// Check if image format supports linear blitting
+	VkFormatProperties formatProperties;
+	vkGetPhysicalDeviceFormatProperties(physicalDevice, imageFormat, &formatProperties);
+	if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
+		throw std::runtime_error("texture image format does not support linear blitting!");
+	}
+	VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+
+	VkImageMemoryBarrier barrier = {};
+	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.image = image;
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	barrier.subresourceRange.baseArrayLayer = 0;
+	barrier.subresourceRange.layerCount = 1;
+	barrier.subresourceRange.levelCount = 1;
+
+	int32_t mipWidth = texWidth;
+	int32_t mipHeight = texHeight;
+
+	for (uint32_t i = 1; i < mipLevels; i++) {
+		barrier.subresourceRange.baseMipLevel = i - 1;
+		barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+		vkCmdPipelineBarrier(commandBuffer,
+		                     VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
+		                     0, nullptr,
+		                     0, nullptr,
+		                     1, &barrier);
+
+		VkImageBlit blit = {};
+		blit.srcOffsets[0] = {0, 0, 0};
+		blit.srcOffsets[1] = {mipWidth, mipHeight, 1};
+		blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		blit.srcSubresource.mipLevel = i - 1;
+		blit.srcSubresource.baseArrayLayer = 0;
+		blit.srcSubresource.layerCount = 1;
+		blit.dstOffsets[0] = {0, 0, 0};
+		blit.dstOffsets[1] = {mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1};
+		blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		blit.dstSubresource.mipLevel = i;
+		blit.dstSubresource.baseArrayLayer = 0;
+		blit.dstSubresource.layerCount = 1;
+
+		vkCmdBlitImage(commandBuffer,
+		               image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+		               image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		               1, &blit,
+		               VK_FILTER_LINEAR);
+		barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+		barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+		vkCmdPipelineBarrier(commandBuffer,
+		                     VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+		                     0, nullptr,
+		                     0, nullptr,
+		                     1, &barrier);
+		if (mipWidth > 1) mipWidth /= 2;
+		if (mipHeight > 1) mipHeight /= 2;
+	}
+	barrier.subresourceRange.baseMipLevel = mipLevels - 1;
+	barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+	vkCmdPipelineBarrier(commandBuffer,
+	                     VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+	                     0, nullptr,
+	                     0, nullptr,
+	                     1, &barrier);
+
+	endSingleTimeCommands(commandBuffer);
 }
