@@ -4,7 +4,6 @@
 
 #include "TriangleApplication.h"
 
-
 bool TriangleApplication::readModelFile(const std::string &pFile) {
 	// Create an instance of the Importer class
 	Assimp::Importer importer;
@@ -13,14 +12,36 @@ bool TriangleApplication::readModelFile(const std::string &pFile) {
 	// Usually - if speed is not the most important aspect for you - you'll
 	// probably to request more postprocessing than we do in this example.
 	const aiScene *scene = importer.ReadFile(pFile,
-//0
-//                                             aiProcess_CalcTangentSpace |
-                                             aiProcess_Triangulate |
-//                                             aiProcess_JoinIdenticalVertices |
-//                                             aiProcess_SortByPType |
-                                             aiProcess_FlipUVs |
-                                             //	                                         aiProcess_FlipWindingOrder |
-                                             0
+	                                         aiProcess_ValidateDataStructure | // Validates imported structure
+//	                                         aiProcess_MakeLeftHanded |
+	                                         //	                                         	                                         aiProcess_FlipWindingOrder |
+	                                         //                                             aiProcess_PreTransformVertices |
+	                                         	                                         aiProcess_RemoveRedundantMaterials | // Removes duplicated materials
+	                                         //	                                         aiProcess_FindInstances |
+	                                         //	                                         aiProcess_RemoveComponent |
+	                                                                                      aiProcess_FindDegenerates |
+	                                         //	                                         aiProcess_GenUVCoords |
+	                                         aiProcess_Triangulate |
+	                                         aiProcess_FlipUVs |
+	                                         //                                             aiProcess_FindInvalidData |
+	                                         //                                             aiProcess_FixInfacingNormals |
+	                                         //                                             aiProcess_SplitLargeMeshes |
+	                                         //                                             aiProcess_SortByPType |
+	                                         //???
+	                                         //	                                         aiProcess_GenNormals |
+	                                         //	                                         aiProcess_CalcTangentSpace |
+	                                         //	                                         aiProcess_OptimizeMeshes |
+	                                         //                                             aiProcess_JoinIdenticalVertices |
+	                                         //	                                         aiProcess_LimitBoneWeights |
+	                                         //	                                         aiProcess_ImproveCacheLocality |
+	                                         //                                             aiProcess_CalcTangentSpace |
+
+	                                         aiProcess_JoinIdenticalVertices |
+	                                         //	                                         aiProcess_SplitLargeMeshes |
+	                                         //	                                                                                      aiProcess_SortByPType |
+	                                         //                                             aiProcess_FlipUVs |
+	                                         //                                             aiProcess_FlipWindingOrder |
+	                                         0
 	);
 
 	// If the import failed, report it
@@ -195,10 +216,10 @@ void TriangleApplication::updateUniformBuffer(uint32_t currentImage) {
 	auto currentTime = std::chrono::high_resolution_clock::now();
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 	UniformBufferObject ubo = {};
-	ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float) swapChainExtent.height, 0.1f,
-	                            10.0f);
+	ubo.model = glm::rotate(glm::mat4(1.0f), time*0.5f * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.view = glm::lookAt(glm::vec3(5.0f, 5.0f, 12.0f), glm::vec3(0.0f, 0.0f, 10.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.proj = glm::perspective(glm::radians(90.0f), swapChainExtent.width / (float) swapChainExtent.height, 0.1f,
+	                            40.0f);
 	ubo.proj[1][1] *= -1;
 	void *data;
 	vkMapMemory(device, uniformBuffersMemory[currentImage], 0, sizeof(ubo), 0, &data);
@@ -390,7 +411,8 @@ VkImageView TriangleApplication::createImageView(VkImage image, VkFormat format,
 
 void TriangleApplication::createTextureImage() {
 	int texWidth, texHeight, texChannels;
-	stbi_uc *pixels = stbi_load("../textures/chalet.jpg", &texWidth, &texHeight, &texChannels,
+	stbi_uc *pixels = stbi_load("../models/the-porcelain-room/source/tex_u1_v1.jpg", &texWidth, &texHeight,
+	                            &texChannels,
 	                            STBI_rgb_alpha);
 	VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth * texHeight * 4);
 
@@ -591,6 +613,8 @@ void TriangleApplication::createDescriptorSetLayout() {
 }
 
 void TriangleApplication::createIndexBuffer() {
+	std::cout << "index count when creating buffer: " << indices.size() << std::endl;
+//	std::copy(indices.begin(), indices.end(), std::ostream_iterator<uint32_t>(std::cout, ", "));
 	VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
 
 	VkBuffer stagingBuffer;
@@ -615,7 +639,9 @@ void TriangleApplication::createIndexBuffer() {
 
 void TriangleApplication::createVertexBuffer() {
 	std::cout << "I have " << vertices.size() << " vertices" << std::endl;
-	VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+//	std::copy(vertices.begin(), vertices.end(), std::ostream_iterator<Vertex>(std::cout));
+	std::cout << "Total stride: " << sizeof(Vertex) << std::endl;
+	VkDeviceSize bufferSize = sizeof(Vertex) * vertices.size();
 
 	VkBuffer stagingBuffer;
 	VkDeviceMemory stagingBufferMemory;
@@ -1260,7 +1286,8 @@ void TriangleApplication::initVulkanAfterPipeline() {
 	createTextureImage();
 	createTextureImageView();
 	createTextureSampler();
-	readModelFile("../models/chalet.obj");
+	readModelFile("../models/the-porcelain-room/source/model.obj");
+//	readModelFile("../models/the-porcelain-room/model.obj");
 	createVertexBuffer();
 	createIndexBuffer();
 	createUniformBuffers();
@@ -1300,6 +1327,7 @@ void TriangleApplication::createGraphicsPipelineFromDescriptions(VkVertexInputBi
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
 	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+//	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
 	inputAssembly.primitiveRestartEnable = VK_FALSE;
 	VkViewport viewport = {};
 	viewport.x = 0.0f;
@@ -1417,11 +1445,17 @@ void TriangleApplication::processSceneObject(const aiScene *scene) {
 	cout << "There are: " << scene->mNumMeshes << " meshes stored." << endl;
 	auto root = scene->mRootNode;
 	cout << "Root has " << root->mNumChildren << " children." << endl;
-	auto mesh = scene->mMeshes[0];
-	cout << "Child of root:" << endl;
-	cout << "has # " << root->mChildren[0]->mNumChildren << endl;
-	auto transformed = root->mChildren[0]->mTransformation;
-
+	cout << "Root also has: " << root->mNumMeshes << " meshes associated with it." << endl;
+	aiMesh *mesh{scene->mMeshes[0]};
+	if (root->mNumChildren) {
+		cout << "Child of root:" << endl;
+		auto child = root->mChildren[0];
+		cout << "has " << root->mChildren[0]->mNumChildren << " amount of children" << endl;
+		cout << "Child has: " << child->mNumMeshes << " meshes assocated with it." << endl;
+		mesh = scene->mMeshes[child->mMeshes[0]];
+		auto transformed = child->mTransformation;
+	}
+	auto material = scene->mMaterials[0];
 	cout << "There are: " << scene->mNumMaterials << " materials" << endl;
 //	auto transformed = root->mTransformation;
 	bool hasTexCoords{false};
@@ -1439,30 +1473,44 @@ void TriangleApplication::processSceneObject(const aiScene *scene) {
 	int channel = 0;
 	cout << "Using channel " << channel << " for getting UV coord" << endl;
 	for (size_t i{}; i < mesh->mNumVertices; i++) {
-		Vertex toAdd{};
-//		cout << "Reading in Vertex #: " << i << endl;
 		auto vertex_point = mesh->mVertices[i];
-		vertex_point *= transformed;
-		glm::vec3 position{vertex_point[0], vertex_point[1], vertex_point[2]};
+		auto color_point = mesh->mTextureCoords[channel][i];
+		Vertex toAdd{{vertex_point[2], vertex_point[0], vertex_point[1]},
+		             {1.0f,            1.0f,            1.0f},
+		             {color_point[0],
+		                               color_point[1]}};
+//		cout << "Reading in Vertex #: " << i << endl;
+
+//		vertex_point *= transformed;
+//		glm::vec3 position;
 //		cout << "Position of this is: " << position.x << ", " << position.y << ", " << position.z << endl;
-		toAdd.pos = position;
-		toAdd.color = {};
+//		toAdd.pos = position;
+//		toAdd.color = {1.0f, 1.0f, 1.0f};
 //		cout << "Reading in texture coordinate at: " << i << std::endl;
-		glm::vec2 tC = hasTexCoords ? glm::vec2{mesh->mTextureCoords[channel][i][0],
-		                                        mesh->mTextureCoords[channel][i][1]}
-		                            : glm::vec2{};
+//		glm::vec2 tC = hasTexCoords ? glm::vec2
+//		                            : glm::vec2{};
 //		cout << "Resulting tex coord: " << tC.x << ", " << tC.y << endl;
-		toAdd.texCoord = tC;
+//		toAdd.texCoord = tC;
 //		cout << "Read in coordinate." << endl;
 		vertices[i] = toAdd;
 //		cout << "Pushed back coordinate" << endl;
 	}
 	cout << "There are now " << vertices.size() << " vertices read in" << endl;
+	cout << "There are " << mesh->mNumFaces << " number of faces." << endl;
 	for (size_t i{}; i < mesh->mNumFaces; i++) {
+
 //		cout << "Face #: " << i << endl;
+		if (mesh->mFaces[i].mNumIndices != 3) {
+			cout << "Maybe here" << endl;
+		}
+//		cout << "Face #" << i << " is..." << endl;
 		for (size_t j{}; j < mesh->mFaces[i].mNumIndices; j++) {
-//			cout << "Indice: " << j << " is: " << mesh->mFaces[i].mIndices[j] << endl;
+			size_t index{mesh->mFaces[i].mIndices[j]};
+//			cout << "Indice: " << j << " is: " << index << endl;
 			indices.push_back(mesh->mFaces[i].mIndices[j]);
 		}
 	}
+	cout << "There are now: " << indices.size() << " number of indices" << endl;
+
+
 }
