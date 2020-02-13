@@ -2,3 +2,15 @@
 cmake-build-debug
 
 *.spv
+
+resources/models/debug_cube.blend
+
+resources/models/debug_cube.mtl
+
+resources/models/debug_cube.obj
+
+resources/models/plane.mtl
+
+resources/models/plane.obj
+
+resources/textures/orange.jpg

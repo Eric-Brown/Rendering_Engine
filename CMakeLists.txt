@@ -5,7 +5,7 @@ include("cmake/HunterGate.cmake")
 HunterGate(
         URL "https://github.com/ruslo/hunter/archive/v0.23.165.tar.gz"
         SHA1 "5a73f91df5f6109c0bb1104d0c0ee423f7bece79"
-#        FILEPATH "C:/Users/alexa/Documents/Programming_Files/CPP Projects/DnDIdea/cmake/Hunter/config.cmake"
+        FILEPATH "C:/Users/alexa/Documents/Programming_Files/CPP Projects/DnDIdea/cmake/Hunter/config.cmake"
 )
 
 project(DnDIdea)
@@ -22,6 +22,11 @@ find_package(glm REQUIRED)
 
 hunter_add_package(stb)
 find_package(stb CONFIG REQUIRED)
+
+find_package(Assimp REQUIRED)
+
+include_directories("${ASSIMP_INCLUDE_DIRS}")
+link_directories(${ASSIMP_LIBRARY_DIRS})
 
 #hunter_add_package(glbinding)
 #find_package(glbinding CONFIG REQUIRED)
@@ -82,6 +87,11 @@ include_directories(AFTER ${VULKAN_PATH}/Include)
 # Link directory for vulkan-1
 link_directories(${VULKAN_PATH}/Bin;${VULKAN_PATH}/Lib;)
 set(CMAKE_CXX_STANDARD 17)
-
+if (MSVC)
+    set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "/W4 /WX")
+else ()
+    set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-Wall -Wextra -pedantic -Werror")
+endif ()
 #add_subdirectory(src)
 add_subdirectory(vulk_src)
+#add_subdirectory(DND_Lib)
