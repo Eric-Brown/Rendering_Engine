@@ -13,13 +13,13 @@ bool TriangleApplication::readModelFile(const std::string &pFile) {
 	// probably to request more postprocessing than we do in this example.
 	const aiScene *scene = importer.ReadFile(pFile,
 	                                         aiProcess_ValidateDataStructure | // Validates imported structure
-//	                                         aiProcess_MakeLeftHanded |
+	                                         //	                                         aiProcess_MakeLeftHanded |
 	                                         //	                                         	                                         aiProcess_FlipWindingOrder |
 	                                         //                                             aiProcess_PreTransformVertices |
-	                                         	                                         aiProcess_RemoveRedundantMaterials | // Removes duplicated materials
+	                                         aiProcess_RemoveRedundantMaterials | // Removes duplicated materials
 	                                         //	                                         aiProcess_FindInstances |
 	                                         //	                                         aiProcess_RemoveComponent |
-	                                                                                      aiProcess_FindDegenerates |
+	                                         aiProcess_FindDegenerates |
 	                                         //	                                         aiProcess_GenUVCoords |
 	                                         aiProcess_Triangulate |
 	                                         aiProcess_FlipUVs |
@@ -216,7 +216,7 @@ void TriangleApplication::updateUniformBuffer(uint32_t currentImage) {
 	auto currentTime = std::chrono::high_resolution_clock::now();
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 	UniformBufferObject ubo = {};
-	ubo.model = glm::rotate(glm::mat4(1.0f), time*0.5f * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.model = glm::rotate(glm::mat4(1.0f), time * 0.5f * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	ubo.view = glm::lookAt(glm::vec3(5.0f, 5.0f, 12.0f), glm::vec3(0.0f, 0.0f, 10.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	ubo.proj = glm::perspective(glm::radians(90.0f), swapChainExtent.width / (float) swapChainExtent.height, 0.1f,
 	                            40.0f);
@@ -389,7 +389,8 @@ void TriangleApplication::createTextureImageView() {
 	textureImageView = createImageView(textureImage, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
 }
 
-VkImageView TriangleApplication::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels) {
+VkImageView TriangleApplication::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags,
+                                                 uint32_t mipLevels) {
 	VkImageViewCreateInfo viewInfo = {};
 	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 	viewInfo.image = image;
@@ -431,11 +432,12 @@ void TriangleApplication::createTextureImage() {
 	vkUnmapMemory(device, stagingBufferMemory);
 	stbi_image_free(pixels);
 	createImage(texWidth, texHeight, mipLevels, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
-	            VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+	            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+	            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 	            textureImage, textureImageMemory);
 
 	transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED,
-	                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels);
+	                      VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, mipLevels);
 	copyBufferToImage(stagingBuffer, textureImage, static_cast<uint32_t>(texWidth),
 	                  static_cast<uint32_t>(texHeight));
 	transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -477,7 +479,8 @@ VkCommandBuffer TriangleApplication::beginSingleTimeCommands() {
 	return commandBuffer;
 }
 
-void TriangleApplication::createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkFormat format, VkImageTiling tiling,
+void TriangleApplication::createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkFormat format,
+                                      VkImageTiling tiling,
                                       VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage &image,
                                       VkDeviceMemory &imageMemory) {
 	VkImageCreateInfo imageInfo = {};
