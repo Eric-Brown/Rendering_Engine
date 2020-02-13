@@ -414,6 +414,7 @@ void TriangleApplication::createTextureImage() {
 	stbi_uc *pixels = stbi_load("../models/the-porcelain-room/source/tex_u1_v1.jpg", &texWidth, &texHeight,
 	                            &texChannels,
 	                            STBI_rgb_alpha);
+	mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
 	VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth * texHeight * 4);
 
 	if (!pixels) {
