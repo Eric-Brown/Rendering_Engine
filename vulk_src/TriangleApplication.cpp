@@ -217,7 +217,7 @@ void TriangleApplication::updateUniformBuffer(uint32_t currentImage) {
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 	UniformBufferObject ubo = {};
 	ubo.model = glm::rotate(glm::mat4(1.0f), time * 0.5f * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	ubo.view = glm::lookAt(glm::vec3(5.0f, 5.0f, 12.0f), glm::vec3(0.0f, 0.0f, 10.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.view = glm::lookAt(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	ubo.proj = glm::perspective(glm::radians(90.0f), swapChainExtent.width / (float) swapChainExtent.height, 0.1f,
 	                            40.0f);
 	ubo.proj[1][1] *= -1;
@@ -412,7 +412,7 @@ VkImageView TriangleApplication::createImageView(VkImage image, VkFormat format,
 
 void TriangleApplication::createTextureImage() {
 	int texWidth, texHeight, texChannels;
-	stbi_uc *pixels = stbi_load("../models/the-porcelain-room/source/tex_u1_v1.jpg", &texWidth, &texHeight,
+	stbi_uc *pixels = stbi_load("../textures/chalet.jpg", &texWidth, &texHeight,
 	                            &texChannels,
 	                            STBI_rgb_alpha);
 	mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
@@ -1287,8 +1287,7 @@ void TriangleApplication::initVulkanAfterPipeline() {
 	createTextureImage();
 	createTextureImageView();
 	createTextureSampler();
-	readModelFile("../models/the-porcelain-room/source/model.obj");
-//	readModelFile("../models/the-porcelain-room/model.obj");
+	readModelFile("../models/chalet.obj");
 	createVertexBuffer();
 	createIndexBuffer();
 	createUniformBuffers();
@@ -1458,7 +1457,6 @@ void TriangleApplication::processSceneObject(const aiScene *scene) {
 	}
 	auto material = scene->mMaterials[0];
 	cout << "There are: " << scene->mNumMaterials << " materials" << endl;
-//	auto transformed = root->mTransformation;
 	bool hasTexCoords{false};
 	if (mesh->HasTextureCoords(0)) {
 		cout << "The given mesh has texture coordinates" << endl;
@@ -1476,38 +1474,18 @@ void TriangleApplication::processSceneObject(const aiScene *scene) {
 	for (size_t i{}; i < mesh->mNumVertices; i++) {
 		auto vertex_point = mesh->mVertices[i];
 		auto color_point = mesh->mTextureCoords[channel][i];
-		Vertex toAdd{{vertex_point[2], vertex_point[0], vertex_point[1]},
+		Vertex toAdd{{vertex_point[0], vertex_point[1], vertex_point[2]},
 		             {1.0f,            1.0f,            1.0f},
 		             {color_point[0],
 		                               color_point[1]}};
-//		cout << "Reading in Vertex #: " << i << endl;
 
-//		vertex_point *= transformed;
-//		glm::vec3 position;
-//		cout << "Position of this is: " << position.x << ", " << position.y << ", " << position.z << endl;
-//		toAdd.pos = position;
-//		toAdd.color = {1.0f, 1.0f, 1.0f};
-//		cout << "Reading in texture coordinate at: " << i << std::endl;
-//		glm::vec2 tC = hasTexCoords ? glm::vec2
-//		                            : glm::vec2{};
-//		cout << "Resulting tex coord: " << tC.x << ", " << tC.y << endl;
-//		toAdd.texCoord = tC;
-//		cout << "Read in coordinate." << endl;
 		vertices[i] = toAdd;
-//		cout << "Pushed back coordinate" << endl;
+
 	}
 	cout << "There are now " << vertices.size() << " vertices read in" << endl;
 	cout << "There are " << mesh->mNumFaces << " number of faces." << endl;
 	for (size_t i{}; i < mesh->mNumFaces; i++) {
-
-//		cout << "Face #: " << i << endl;
-		if (mesh->mFaces[i].mNumIndices != 3) {
-			cout << "Maybe here" << endl;
-		}
-//		cout << "Face #" << i << " is..." << endl;
 		for (size_t j{}; j < mesh->mFaces[i].mNumIndices; j++) {
-			size_t index{mesh->mFaces[i].mIndices[j]};
-//			cout << "Indice: " << j << " is: " << index << endl;
 			indices.push_back(mesh->mFaces[i].mIndices[j]);
 		}
 	}
@@ -1516,7 +1494,8 @@ void TriangleApplication::processSceneObject(const aiScene *scene) {
 
 }
 
-void TriangleApplication::generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels) {
+void TriangleApplication::generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight,
+                                          uint32_t mipLevels) {
 	// Check if image format supports linear blitting
 	VkFormatProperties formatProperties;
 	vkGetPhysicalDeviceFormatProperties(physicalDevice, imageFormat, &formatProperties);
@@ -1552,14 +1531,14 @@ void TriangleApplication::generateMipmaps(VkImage image, VkFormat imageFormat, i
 		                     1, &barrier);
 
 		VkImageBlit blit = {};
-		blit.srcOffsets[0] = { 0, 0, 0 };
-		blit.srcOffsets[1] = { mipWidth, mipHeight, 1 };
+		blit.srcOffsets[0] = {0, 0, 0};
+		blit.srcOffsets[1] = {mipWidth, mipHeight, 1};
 		blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		blit.srcSubresource.mipLevel = i - 1;
 		blit.srcSubresource.baseArrayLayer = 0;
 		blit.srcSubresource.layerCount = 1;
-		blit.dstOffsets[0] = { 0, 0, 0 };
-		blit.dstOffsets[1] = { mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1 };
+		blit.dstOffsets[0] = {0, 0, 0};
+		blit.dstOffsets[1] = {mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1};
 		blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		blit.dstSubresource.mipLevel = i;
 		blit.dstSubresource.baseArrayLayer = 0;
