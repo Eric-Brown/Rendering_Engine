@@ -26,6 +26,8 @@ struct UniformBufferObject {
 
 class TriangleApplication {
 public:
+	TriangleApplication();
+
 	void run() {
 		initWindow();
 		initVulkan();
@@ -117,10 +119,10 @@ private:
 		std::vector<VkPresentModeKHR> presentModes;
 	};
 
-	static inline constexpr std::array<const char *,1> requiredDeviceExtensions{
+	static inline constexpr std::array<const char *, 1> requiredDeviceExtensions{
 			VK_KHR_SWAPCHAIN_EXTENSION_NAME
 	};
-	static inline constexpr std::array<const char *,1> validationLayers{
+	static inline constexpr std::array<const char *, 1> validationLayers{
 			"VK_LAYER_KHRONOS_validation"
 	};
 	// Done so that validation can be toggled in the future
@@ -143,21 +145,8 @@ private:
 	std::vector<VkFence> inFlightFences;
 	size_t currentFrame = 0;
 	bool framebufferResized{false};
-	std::vector<Vertex> vertices = {
-			{{-0.5f, -0.5f, 0.0f},  {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-			{{0.5f,  -0.5f, 0.0f},  {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-			{{0.5f,  0.5f,  0.0f},  {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-			{{-0.5f, 0.5f,  0.0f},  {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
-
-			{{-1.5f, -1.5f, -1.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-			{{1.5f,  -1.5f, -1.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-			{{1.5f,  1.5f,  -1.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-			{{-1.5f, 1.5f,  -1.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
-	};
-	std::vector<uint32_t> indices = {
-			0, 1, 2, 2, 3, 0,
-			4, 5, 6, 6, 7, 4
-	};
+	std::vector<Vertex> vertices;
+	std::vector<uint32_t> indices;
 	VkBuffer vertexBuffer;
 	VkDeviceMemory vertexBufferMemory;
 	VkBuffer indexBuffer;
@@ -207,6 +196,7 @@ private:
 
 	void createGraphicsPipelineFromDescriptions(VkVertexInputBindingDescription &bindingDescription,
 	                                            std::array<VkVertexInputAttributeDescription, 3> &attributeDescriptions);
+
 	VkSampleCountFlagBits getMaxUsableSampleCount();
 
 	void createFramebuffers();
@@ -226,7 +216,8 @@ private:
 
 	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
-	void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels);
+	void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout,
+	                           uint32_t mipLevels);
 
 	void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
@@ -243,9 +234,11 @@ private:
 
 	void createColorResources();
 
-	void createImage(uint32_t width, uint32_t height, uint32_t mipLevels,  VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling,
-	                 VkImageUsageFlags usage,
-	                 VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &imageMemory);
+	void
+	createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples, VkFormat format,
+	            VkImageTiling tiling,
+	            VkImageUsageFlags usage,
+	            VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &imageMemory);
 
 	VkCommandBuffer beginSingleTimeCommands();
 
@@ -262,6 +255,7 @@ private:
 	bool hasStencilComponent(VkFormat format);
 
 	VkFormat findDepthFormat();
+
 	void generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
 
 
@@ -269,8 +263,6 @@ private:
 	findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
 	void createDepthResources();
-
-	//moving to cpp messes up??
 
 	bool readModelFile(const std::string &pFile);
 

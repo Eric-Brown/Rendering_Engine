@@ -416,8 +416,7 @@ void TriangleApplication::createTextureImage() {
 	                            &texChannels,
 	                            STBI_rgb_alpha);
 	mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
-	auto imageSize = static_cast<VkDeviceSize>(texWidth * texHeight * 4);
-
+	auto imageSize = static_cast<VkDeviceSize>(static_cast<uint32_t>(texWidth * texHeight * 4));
 	if (!pixels) {
 		throw std::runtime_error("failed to load texture image!");
 	}
@@ -431,7 +430,8 @@ void TriangleApplication::createTextureImage() {
 	memcpy(data, pixels, static_cast<size_t>(imageSize));
 	vkUnmapMemory(device, stagingBufferMemory);
 	stbi_image_free(pixels);
-	createImage(texWidth, texHeight, mipLevels, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R8G8B8A8_UNORM,
+	createImage(static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight), mipLevels, VK_SAMPLE_COUNT_1_BIT,
+	            VK_FORMAT_R8G8B8A8_UNORM,
 	            VK_IMAGE_TILING_OPTIMAL,
 	            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 	            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
@@ -708,7 +708,6 @@ void TriangleApplication::transitionImageLayout(VkImage image, VkFormat format, 
 	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.image = image;
-	barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 	barrier.subresourceRange.baseMipLevel = 0;
 	barrier.subresourceRange.levelCount = mipLevels;
 	barrier.subresourceRange.baseArrayLayer = 0;
@@ -1126,15 +1125,16 @@ VkPresentModeKHR
 TriangleApplication::chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes) {
 	using namespace std;
 	VkPresentModeKHR bestMode = VK_PRESENT_MODE_FIFO_KHR;
-	auto found = for_each(availablePresentModes.begin(), availablePresentModes.end(),
-	                      [&](const VkPresentModeKHR &val) {
-		                      if (val == VK_PRESENT_MODE_MAILBOX_KHR) { bestMode = val; }
-		                      else if (bestMode == VK_PRESENT_MODE_FIFO_KHR &&
-		                               val == VK_PRESENT_MODE_IMMEDIATE_KHR) {
-			                      bestMode = val;
-		                      }
-	                      });
-	return bestMode;
+	auto supports_mailbox = [&](const VkPresentModeKHR &val) { return val == VK_PRESENT_MODE_MAILBOX_KHR; };
+	auto supports_fifo_immediate = [&](const VkPresentModeKHR &val) {
+		return bestMode == VK_PRESENT_MODE_FIFO_KHR && val == VK_PRESENT_MODE_IMMEDIATE_KHR;
+	};
+	auto best = find_if(availablePresentModes.begin(), availablePresentModes.end(), supports_mailbox);
+	if (best == availablePresentModes.end()) {
+		best = find_if(availablePresentModes.begin(), availablePresentModes.end(), supports_fifo_immediate);
+	}
+	bestMode = (best != availablePresentModes.end()) ? *best : bestMode;
+	return *best;
 }
 
 VkSurfaceFormatKHR
@@ -1249,8 +1249,8 @@ TriangleApplication::QueueFamilyIndices TriangleApplication::findQueueFamilies(V
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
 	std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
-	int i = 0;
-	VkBool32 presentSupport{false};
+	uint32_t i = 0;
+	VkBool32 presentSupport{VK_FALSE};
 	for (const auto &queueFamily : queueFamilies) {
 		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
 		if (queueFamily.queueCount > 0) {
@@ -1288,7 +1288,6 @@ void TriangleApplication::recreateSwapChain() {
 	createDescriptorPool();
 	createDescriptorSets();
 	createCommandBuffers();
-
 }
 
 void TriangleApplication::initVulkanBeforePipeline() {
@@ -1334,7 +1333,7 @@ void TriangleApplication::createGraphicsPipelineFromDescriptions(VkVertexInputBi
 	vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
 	vertShaderStageInfo.module = verMod;
-	vertShaderStageInfo.pName = "main"; //entrypoint name
+	vertShaderStageInfo.pName = "main"; //entry point name
 	VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
 	fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
@@ -1351,7 +1350,6 @@ void TriangleApplication::createGraphicsPipelineFromDescriptions(VkVertexInputBi
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
 	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-//	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
 	inputAssembly.primitiveRestartEnable = VK_FALSE;
 	VkViewport viewport = {};
 	viewport.x = 0.0f;
@@ -1475,17 +1473,13 @@ void TriangleApplication::processSceneObject(const aiScene *scene) {
 		cout << "Child of root:" << endl;
 		auto child = root->mChildren[0];
 		cout << "has " << root->mChildren[0]->mNumChildren << " amount of children" << endl;
-		cout << "Child has: " << child->mNumMeshes << " meshes assocated with it." << endl;
+		cout << "Child has: " << child->mNumMeshes << " meshes associated with it." << endl;
 		mesh = scene->mMeshes[child->mMeshes[0]];
-		auto transformed = child->mTransformation;
 	}
-	auto material = scene->mMaterials[0];
 	cout << "There are: " << scene->mNumMaterials << " materials" << endl;
-	bool hasTexCoords{false};
 	if (mesh->HasTextureCoords(0)) {
 		cout << "The given mesh has texture coordinates" << endl;
 		cout << "There are " << mesh->GetNumUVChannels() << " UV channels" << endl;
-		hasTexCoords = {true};
 	}
 	if (mesh->HasVertexColors(0)) {
 		cout << "The given mesh has vertex colors" << endl;
@@ -1624,4 +1618,20 @@ void TriangleApplication::createColorResources() {
 	            VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
 	            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, colorImage, colorImageMemory);
 	colorImageView = createImageView(colorImage, colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+}
+
+TriangleApplication::TriangleApplication()
+		: vertices{
+		{{-0.5f, -0.5f, 0.0f},  {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+		{{0.5f,  -0.5f, 0.0f},  {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+		{{0.5f,  0.5f,  0.0f},  {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+		{{-0.5f, 0.5f,  0.0f},  {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+
+		{{-1.5f, -1.5f, -1.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+		{{1.5f,  -1.5f, -1.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+		{{1.5f,  1.5f,  -1.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+		{{-1.5f, 1.5f,  -1.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}},
+		  indices{
+				  0, 1, 2, 2, 3, 0,
+				  4, 5, 6, 6, 7, 4} {
 }
