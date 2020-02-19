@@ -871,20 +871,11 @@ void TriangleApplication::createCommandBuffers() {
 }
 
 void TriangleApplication::cleanupSwapChain() {
-	vkDestroyImageView(device, colorImageView, nullptr);
-	vkDestroyImage(device, colorImage, nullptr);
-	vkFreeMemory(device, colorImageMemory, nullptr);
-	vkDestroyImageView(device, depthImageView, nullptr);
-	vkDestroyImage(device, depthImage, nullptr);
-	vkFreeMemory(device, depthImageMemory, nullptr);
+	cleanupImageResources();
 	for (auto swapChainFramebuffer : swapChainFramebuffers) {
 		vkDestroyFramebuffer(device, swapChainFramebuffer, nullptr);
 	}
-	vkFreeCommandBuffers(device, commandPool, static_cast<uint32_t>(commandBuffers.size()),
-	                     commandBuffers.data());
-	vkDestroyPipeline(device, graphicsPipeline, nullptr);
-	vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
-	vkDestroyRenderPass(device, renderPass, nullptr);
+	cleanupPipelineResources();
 	for (auto swapChainImageView: swapChainImageViews) {
 		vkDestroyImageView(device, swapChainImageView, nullptr);
 	}
@@ -897,14 +888,33 @@ void TriangleApplication::cleanupSwapChain() {
 	vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 }
 
+void TriangleApplication::cleanupPipelineResources() const {
+	vkFreeCommandBuffers(device, commandPool, static_cast<uint32_t>(commandBuffers.size()),
+	                     commandBuffers.data());
+	vkDestroyPipeline(device, graphicsPipeline, nullptr);
+	vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+	vkDestroyRenderPass(device, renderPass, nullptr);
+}
+
+void TriangleApplication::cleanupImageResources() const {
+	vkDestroyImageView(device, colorImageView, nullptr);
+	vkDestroyImage(device, colorImage, nullptr);
+	vkFreeMemory(device, colorImageMemory, nullptr);
+	vkDestroyImageView(device, depthImageView, nullptr);
+	vkDestroyImage(device, depthImage, nullptr);
+	vkFreeMemory(device, depthImageMemory, nullptr);
+}
+
 void TriangleApplication::createCommandPool() {
 	QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice);
-	VkCommandPoolCreateInfo poolInfo{};
-	poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
-	poolInfo.flags = 0; //optional
+	VkCommandPoolCreateInfo poolInfo{
+			VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+			nullptr,
+			0, // Optional flags
+			queueFamilyIndices.graphicsFamily.value()
+	};
 	if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create command pool!");
+		throw std::runtime_error(COMMAND_POOL_FAIL_CREATE_MSG);
 	}
 }
 
@@ -917,17 +927,19 @@ void TriangleApplication::createFramebuffers() {
 				swapChainImageViews[i]
 
 		};
-		VkFramebufferCreateInfo framebufferInfo{};
-		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		framebufferInfo.renderPass = renderPass;
-		framebufferInfo.attachmentCount = 3;
-		framebufferInfo.pAttachments = attachments->data();
-		framebufferInfo.width = swapChainExtent.width;
-		framebufferInfo.height = swapChainExtent.height;
-		framebufferInfo.layers = 1;
-		if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &swapChainFramebuffers[i]) !=
-		    VK_SUCCESS) {
-			throw std::runtime_error("failed to create framebuffer");
+		VkFramebufferCreateInfo framebufferInfo{
+				VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+				nullptr,
+				0, //Optional flags
+				renderPass,
+				static_cast<uint32_t >(attachments->size()),
+				attachments->data(),
+				swapChainExtent.width,
+				swapChainExtent.height,
+				1 //Layer count
+		};
+		if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS) {
+			throw std::runtime_error(FRAMEBUFFER_CREATE_FAIL_MSG);
 		}
 	}
 
@@ -993,17 +1005,18 @@ void TriangleApplication::createRenderPass() {
 	renderPassInfo.dependencyCount = 1;
 	renderPassInfo.pDependencies = &dependency;
 	if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create render pass!");
+		throw std::runtime_error(RENDER_PASS_CREATE_FAIL_MSG);
 	}
 
 }
 
 void TriangleApplication::createImageViews() {
-	swapChainImageViews.resize(swapChainImages.size());
-	for (size_t i = 0; i < swapChainImages.size(); i++) {
-		swapChainImageViews[i] = createImageView(swapChainImages[i], swapChainImageFormat,
-		                                         VK_IMAGE_ASPECT_COLOR_BIT, 1);
-	}
+	swapChainImageViews.clear();
+	std::for_each(swapChainImages.begin(), swapChainImages.end(),
+	              [&](const VkImage &image) {
+		              swapChainImageViews.push_back(
+				              createImageView(image, swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1));
+	              });
 }
 
 void TriangleApplication::createSwapChain() {
@@ -1012,10 +1025,8 @@ void TriangleApplication::createSwapChain() {
 	auto presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
 	auto extent = chooseSwapExtent(swapChainSupport.capabilities);
 	uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
-	if (swapChainSupport.capabilities.maxImageCount > 0 &&
-	    imageCount > swapChainSupport.capabilities.maxImageCount) {
-		imageCount = swapChainSupport.capabilities.maxImageCount;
-	}
+	imageCount = std::clamp(std::min(imageCount, swapChainSupport.capabilities.maxImageCount), 1u,
+	                        std::max(swapChainSupport.capabilities.maxImageCount, 1u));
 	VkSwapchainCreateInfoKHR createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 	createInfo.surface = surface;
@@ -1023,13 +1034,13 @@ void TriangleApplication::createSwapChain() {
 	createInfo.imageFormat = surfaceFormat.format;
 	createInfo.imageColorSpace = surfaceFormat.colorSpace;
 	createInfo.imageExtent = extent;
-	createInfo.imageArrayLayers = 1;
+	createInfo.imageArrayLayers = 1u;
 	createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 	QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
 	uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 	if (indices.graphicsFamily != indices.presentFamily) {
 		createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-		createInfo.queueFamilyIndexCount = 2;
+		createInfo.queueFamilyIndexCount = 2u;
 		createInfo.pQueueFamilyIndices = queueFamilyIndices;
 	} else {
 		createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -1042,7 +1053,7 @@ void TriangleApplication::createSwapChain() {
 	createInfo.clipped = VK_TRUE;
 	createInfo.oldSwapchain = VK_NULL_HANDLE;
 	if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create swap chain!");
+		throw std::runtime_error(SWAP_CHAIN_CREATE_FAIL_MSG);
 	}
 	vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr);
 	swapChainImages.resize(imageCount);
@@ -1054,9 +1065,8 @@ void TriangleApplication::createSwapChain() {
 void TriangleApplication::createSurface() {
 	using namespace std;
 	if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
-		throw runtime_error("Failed to create window surface.");
+		throw runtime_error(WINDOW_SURF_CREATE_FAIL_MSG);
 	}
-
 }
 
 void TriangleApplication::createLogicalDevice() {
@@ -1086,7 +1096,7 @@ void TriangleApplication::createLogicalDevice() {
 	createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
 	createInfo.ppEnabledLayerNames = validationLayers.data();
 	if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create logical device!");
+		throw std::runtime_error(LOGI_DEV_CREATE_FAIL_MSG);
 	}
 	// 0 is the Queue index. Since creating only one, it is zero.
 	vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
@@ -1186,12 +1196,12 @@ void TriangleApplication::pickPhysicalDevice() {
 	using namespace std;
 	uint32_t deviceCount{};
 	vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
-	if (deviceCount == 0) throw runtime_error("No Vulkan devices available.");
+	if (deviceCount == 0) throw runtime_error(NO_VULK_DEV_AVAILABLE_MSG);
 	vector<VkPhysicalDevice> devices(deviceCount);
 	vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
 	devices.erase(find_if(devices.begin(), devices.end(),
 	                      [&](VkPhysicalDevice &dev) { return !isDeviceSuitable(dev); }), devices.end());
-	if (devices.empty()) throw runtime_error("No suitable Vulkan devices available.");
+	if (devices.empty()) throw runtime_error(VULK_DEV_NOT_SUITABLE_MSG);
 	sort(devices.begin(), devices.end(), [&](VkPhysicalDevice &a, VkPhysicalDevice &b) {
 		return scoreDevice(a) > scoreDevice(b);
 	});
@@ -1240,7 +1250,7 @@ uint32_t TriangleApplication::findMemoryType(uint32_t typeFilter, VkMemoryProper
 			return i;
 		}
 	}
-	throw std::runtime_error("failed to find suitable memory type!");
+	throw std::runtime_error(NO_SUITABLE_MEMORY_MSG);
 }
 
 TriangleApplication::QueueFamilyIndices TriangleApplication::findQueueFamilies(VkPhysicalDevice device) {
@@ -1415,7 +1425,7 @@ void TriangleApplication::createGraphicsPipelineFromDescriptions(VkVertexInputBi
 	pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
 	pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 	if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create pipeline layout!");
+		throw std::runtime_error(PIPELINE_LAYOUT_CREATE_FAIL_MSG);
 	}
 	VkPipelineDepthStencilStateCreateInfo depthStencil = {};
 	depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
@@ -1455,7 +1465,7 @@ void TriangleApplication::createGraphicsPipelineFromDescriptions(VkVertexInputBi
 	VkGraphicsPipelineCreateInfo pipelineInfo = pipelineInfo1;
 	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) !=
 	    VK_SUCCESS) {
-		throw std::runtime_error("failed to create graphics pipeline!");
+		throw std::runtime_error(PIPELINE_CREATE_FAIL_MSG);
 	}
 	vkDestroyShaderModule(device, verMod, nullptr);
 	vkDestroyShaderModule(device, fraMod, nullptr);
@@ -1518,7 +1528,7 @@ void TriangleApplication::generateMipmaps(VkImage image, VkFormat imageFormat, i
 	VkFormatProperties formatProperties;
 	vkGetPhysicalDeviceFormatProperties(physicalDevice, imageFormat, &formatProperties);
 	if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
-		throw std::runtime_error("texture image format does not support linear blitting!");
+		throw std::runtime_error(TEXTURE_FORMAT_NOT_SUPPORT_BLITTING_MSG);
 	}
 	VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
