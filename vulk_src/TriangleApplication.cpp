@@ -7,7 +7,7 @@
 bool TriangleApplication::readModelFile(const std::string &pFile) {
     // Create an instance of the Importer class
     Assimp::Importer importer;
-
+std::cout << "Reading file now...\n" << std::endl;
     // And have it read the given file with some example postprocessing
     // Usually - if speed is not the most important aspect for you - you'll
     // probably to request more postprocessing than we do in this example.
@@ -50,6 +50,7 @@ bool TriangleApplication::readModelFile(const std::string &pFile) {
 //		DoTheErrorLogging( importer.GetErrorString());
         return false;
     }
+    std::cout << "Processing Geometry now...\n" << std::endl;
 
     // Now we can access the file's contents.
     processSceneObject(scene);
