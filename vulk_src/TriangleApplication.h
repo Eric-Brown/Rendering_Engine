@@ -5,11 +5,36 @@
 #ifndef DNDIDEA_TRIANGLEAPPLICATION_H
 #define DNDIDEA_TRIANGLEAPPLICATION_H
 
+static const char *const COMMAND_POOL_FAIL_CREATE_MSG = "Failed to create command pool!";
+
+static const char *const FRAMEBUFFER_CREATE_FAIL_MSG = "Failed to create framebuffer";
+
+static const char *const WINDOW_SURF_CREATE_FAIL_MSG = "Failed to create window surface.";
+
+static const char *const RENDER_PASS_CREATE_FAIL_MSG = "Failed to create render pass!";
+
+static const char *const SWAP_CHAIN_CREATE_FAIL_MSG = "Failed to create swap chain!";
+
+static const char *const LOGI_DEV_CREATE_FAIL_MSG = "Failed to create logical device!";
+
+static const char *const NO_VULK_DEV_AVAILABLE_MSG = "No Vulkan devices available.";
+
+static const char *const VULK_DEV_NOT_SUITABLE_MSG = "No suitable Vulkan devices available.";
+
+static const char *const NO_SUITABLE_MEMORY_MSG = "Failed to find suitable memory type!";
+
+static const char *const PIPELINE_LAYOUT_CREATE_FAIL_MSG = "Failed to create pipeline layout!";
+
+static const char *const PIPELINE_CREATE_FAIL_MSG = "Failed to create graphics pipeline!";
+
+static const char *const TEXTURE_FORMAT_NOT_SUPPORT_BLITTING_MSG = "Texture image format does not support linear blitting!";
+
 #include <vector>
 #include <algorithm>
 #include <iostream>
 #include <set>
 #include <string>
+#include <iterator>
 #include <optional>
 #include <fstream>
 #include <array>
@@ -114,9 +139,9 @@ private:
 	};
 
 	struct SwapChainSupportDetails {
-		VkSurfaceCapabilitiesKHR capabilities;
-		std::vector<VkSurfaceFormatKHR> formats;
-		std::vector<VkPresentModeKHR> presentModes;
+		VkSurfaceCapabilitiesKHR capabilities{};
+		std::vector<VkSurfaceFormatKHR> formats{};
+		std::vector<VkPresentModeKHR> presentModes{};
 	};
 
 	static inline constexpr std::array<const char *, 1> requiredDeviceExtensions{
@@ -293,6 +318,10 @@ private:
 	static std::vector<char> readFile(const std::string &filename);
 
 	VkShaderModule createShaderModule(const std::vector<char> &code);
+
+	void cleanupImageResources() const;
+
+	void cleanupPipelineResources() const;
 };
 
 
