@@ -16,3 +16,7 @@ resources/models/plane.obj
 resources/textures/orange.jpg
 
 vkvia.html
+
+out/
+
+.vs/

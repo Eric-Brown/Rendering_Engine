@@ -9,17 +9,17 @@ set(CMAKE_CXX_STANDARD 17)
 include("cmake/HunterGate.cmake")
 
 HunterGate(
-        URL "https://github.com/cpp-pm/hunter/archive/v0.23.251.tar.gz"
-        SHA1 "5659b15dc0884d4b03dbd95710e6a1fa0fc3258d"
+       URL "https://github.com/cpp-pm/hunter/archive/v0.23.251.tar.gz"
+      SHA1 "5659b15dc0884d4b03dbd95710e6a1fa0fc3258d"
 )
 
         #        LOCAL `${CMAKE_CURRENT_LIST_DIR}/cmake/Hunter/config.cmake`
 
-set(HUNTER_PACKAGES glfw Assimp glm stb)
+#set(HUNTER_PACKAGES glfw Assimp glm stb)
 
-include(FetchContent)
-FetchContent_Declare(SetupHunter GIT_REPOSITORY https://github.com/cpp-pm/gate)
-FetchContent_MakeAvailable(SetupHunter)
+#include(FetchContent)
+#FetchContent_Declare(SetupHunter GIT_REPOSITORY https://github.com/cpp-pm/gate)
+#FetchContent_MakeAvailable(SetupHunter)
 
 project(DnDIdea)
 

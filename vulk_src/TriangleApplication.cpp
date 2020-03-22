@@ -31,7 +31,7 @@ std::cout << "Reading file now...\n" << std::endl;
                                              //	                                         aiProcess_GenNormals |
                                              //	                                         aiProcess_CalcTangentSpace |
                                              //	                                         aiProcess_OptimizeMeshes |
-                                             //                                             aiProcess_JoinIdenticalVertices |
+//                                                                                          aiProcess_JoinIdenticalVertices |
                                              //	                                         aiProcess_LimitBoneWeights |
                                              //	                                         aiProcess_ImproveCacheLocality |
                                              //                                             aiProcess_CalcTangentSpace |
@@ -218,7 +218,7 @@ void TriangleApplication::updateUniformBuffer(uint32_t currentImage) {
     float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
     UniformBufferObject ubo = {};
     ubo.model = glm::rotate(glm::mat4(1.0f), time * 0.5f * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.view = glm::lookAt(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.view = glm::lookAt(glm::vec3(3.0f, 3.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.proj = glm::perspective(glm::radians(90.0f), swapChainExtent.width / (float) swapChainExtent.height, 0.1f,
                                 40.0f);
     ubo.proj[1][1] *= -1;
@@ -413,7 +413,7 @@ VkImageView TriangleApplication::createImageView(VkImage image, VkFormat format,
 
 void TriangleApplication::createTextureImage() {
     int texWidth, texHeight, texChannels;
-    stbi_uc *pixels = stbi_load("../resources/textures/chalet.jpg", &texWidth, &texHeight,
+    stbi_uc *pixels = stbi_load("../resources/models/the-porcelain-room/source/tex_u1_v1.jpg", &texWidth, &texHeight,
                                 &texChannels,
                                 STBI_rgb_alpha);
     mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
@@ -1322,7 +1322,7 @@ void TriangleApplication::initVulkanAfterPipeline() {
     createTextureImage();
     createTextureImageView();
     createTextureSampler();
-    readModelFile("../resources/models/chalet.obj");
+    readModelFile("../resources/models/the-porcelain-room/source/model.obj");
     createVertexBuffer();
     createIndexBuffer();
     createUniformBuffers();
@@ -1504,7 +1504,7 @@ void TriangleApplication::processSceneObject(const aiScene *scene) {
     for (size_t i{}; i < mesh->mNumVertices; i++) {
         auto vertex_point = mesh->mVertices[i];
         auto color_point = mesh->mTextureCoords[channel][i];
-        Vertex toAdd{{vertex_point[0], vertex_point[1], vertex_point[2]},
+        Vertex toAdd{{vertex_point[2], vertex_point[0], vertex_point[1]},
                      {1.0f,            1.0f,            1.0f},
                      {color_point[0],
                                        color_point[1]}};
