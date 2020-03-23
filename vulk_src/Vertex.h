@@ -7,7 +7,7 @@
 
 #include <array>
 #include <ostream>
-#include "CommonIncludes.h"
+#include "ExternalIncludes.h"
 
 struct Vertex {
 	glm::vec3 pos;

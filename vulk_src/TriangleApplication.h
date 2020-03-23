@@ -40,7 +40,7 @@ static const char *const TEXTURE_FORMAT_NOT_SUPPORT_BLITTING_MSG = "Texture imag
 #include <array>
 #include <stdexcept>
 #include <chrono>
-#include "CommonIncludes.h"
+#include "ExternalIncludes.h"
 #include "Vertex.h"
 
 struct UniformBufferObject {
@@ -77,6 +77,7 @@ private:
 
 	void cleanup();
 
+
 	void initVulkanBeforePipeline();
 
 	void createGraphicsPipeline() {
@@ -107,23 +108,23 @@ private:
 
 	void createLogicalDevice();
 
-	VkSwapchainKHR swapChain;
+	VkSwapchainKHR swapChain{};
 
 	void createSwapChain();
 
 
-	std::vector<VkImage> swapChainImages;
-	VkFormat swapChainImageFormat;
-	VkExtent2D swapChainExtent;
-	std::vector<VkImageView> swapChainImageViews;
+	std::vector<VkImage> swapChainImages{};
+	VkFormat swapChainImageFormat{};
+	VkExtent2D swapChainExtent{};
+	std::vector<VkImageView> swapChainImageViews{};
 
 	void createImageViews();
 
-	VkRenderPass renderPass;
+	VkRenderPass renderPass{};
 
 	void createRenderPass();
 
-	VkDescriptorSetLayout descriptorSetLayout;
+	VkDescriptorSetLayout descriptorSetLayout{};
 
 	void createDescriptorSetLayout();
 
@@ -160,41 +161,40 @@ private:
 	VkQueue presentQueue{};
 
 
-	VkPipelineLayout pipelineLayout;
-	VkPipeline graphicsPipeline;
-	std::vector<VkFramebuffer> swapChainFramebuffers;
-	VkCommandPool commandPool;
-	std::vector<VkCommandBuffer> commandBuffers;
-	std::vector<VkSemaphore> imageAvailableSemaphores;
-	std::vector<VkSemaphore> renderFinishedSemaphores;
-	std::vector<VkFence> inFlightFences;
+	VkPipelineLayout pipelineLayout{};
+	VkPipeline graphicsPipeline{};
+	std::vector<VkFramebuffer> swapChainFramebuffers{};
+	VkCommandPool commandPool{};
+	std::vector<VkCommandBuffer> commandBuffers{};
+	std::vector<VkSemaphore> imageAvailableSemaphores{};
+	std::vector<VkSemaphore> renderFinishedSemaphores{};
+	std::vector<VkFence> inFlightFences{};
 	size_t currentFrame = 0;
 	bool framebufferResized{false};
-	std::vector<Vertex> vertices;
-	std::vector<uint32_t> indices;
-	VkBuffer vertexBuffer;
-	VkDeviceMemory vertexBufferMemory;
-	VkBuffer indexBuffer;
-	VkDeviceMemory indexBufferMemory;
-	uint32_t mipLevels; //for texture
-	VkImage textureImage;
-	VkDeviceMemory textureImageMemory;
-	VkImageView textureImageView;
-	VkSampler textureSampler;
-	VkImage depthImage;
-	VkDeviceMemory depthImageMemory;
-	VkImageView depthImageView;
-	VkImage colorImage;
-	VkDeviceMemory colorImageMemory;
-	VkImageView colorImageView;
+	std::vector<Vertex> vertices{};
+	std::vector<uint32_t> indices{};
+	VkBuffer vertexBuffer{};
+	VkDeviceMemory vertexBufferMemory{};
+	VkBuffer indexBuffer{};
+	VkDeviceMemory indexBufferMemory{};
+	uint32_t mipLevels{}; //for texture
+	VkImage textureImage{};
+	VkDeviceMemory textureImageMemory{};
+	VkImageView textureImageView{};
+	VkSampler textureSampler{};
+	VkImage depthImage{};
+	VkDeviceMemory depthImageMemory{};
+	VkImageView depthImageView{};
+	VkImage colorImage{};
+	VkDeviceMemory colorImageMemory{};
+	VkImageView colorImageView{};
 
 	VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
 
-	std::vector<VkBuffer> uniformBuffers;
-	std::vector<VkDeviceMemory> uniformBuffersMemory;
-
-	VkDescriptorPool descriptorPool;
-	std::vector<VkDescriptorSet> descriptorSets;
+	std::vector<VkBuffer> uniformBuffers{};
+	std::vector<VkDeviceMemory> uniformBuffersMemory{};
+	VkDescriptorPool descriptorPool{};
+	std::vector<VkDescriptorSet> descriptorSets{};
 
 
 	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
