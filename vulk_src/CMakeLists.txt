@@ -1,10 +1,17 @@
 cmake_minimum_required(VERSION 3.10)
-
 set(CMAKE_CXX_STANDARD 17)
-#set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "/ignore:4099")
-add_executable(vulk_main main.cpp
+project(Vulk_Main)
+
+add_executable(${PROJECT_NAME} main.cpp
         TriangleApplication.cpp
         TriangleApplication.h
-        CommonIncludes.h Vertex.h Vertex.cpp)
+        Vertex.h Vertex.cpp
+        ExternalIncludes.h
+        )
+target_link_libraries(${PROJECT_NAME} PRIVATE glfw glm Vulkan::Vulkan Assimp::assimp)
+if(MSVC)
+    target_compile_options(${PROJECT_NAME} PRIVATE /wd4099 /wd26812 /W4 /WX /experimental:external /external:anglebrackets /external:W0)
+else()
+    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -pedantic -Werror -pedantic-errors)
+endif()
 
-target_link_libraries(vulk_main PRIVATE glfw glm Vulkan::Vulkan Assimp::assimp)

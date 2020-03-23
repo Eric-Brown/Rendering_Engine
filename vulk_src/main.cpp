@@ -7,14 +7,14 @@
 #define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLFW_INCLUDE_VULKAN
-#include "CommonIncludes.h"
+#include "ExternalIncludes.h"
 #include "TriangleApplication.h"
 #include <iostream>
 #include <stdexcept>
 
 
 
-int main(int argc, char **argv) {
+int main(int , char **) {
 	using namespace std;
 	TriangleApplication app;
 	try {
