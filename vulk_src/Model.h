@@ -16,10 +16,13 @@ private:
 public:
 //	Model(const char* fName);
 //	Model(const std::string fName);
-	Model(std::vector<Vertex>& preloadedMesh, std::vector<uint32_t> preloadedMeshIndices);
-	const std::vector<Vertex>& GetMesh();
-	const std::vector<uint32_t>& GetIndices();
-	const glm::mat4& GetModelTransform();
+	Model(std::vector<Vertex> &preloadedMesh, std::vector<uint32_t> preloadedMeshIndices);
+
+	const std::vector<Vertex> &GetMesh();
+
+	const std::vector<uint32_t> &GetIndices();
+
+	const glm::mat4 &GetModelTransform();
 };
 
 

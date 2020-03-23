@@ -42,6 +42,7 @@ static const char *const TEXTURE_FORMAT_NOT_SUPPORT_BLITTING_MSG = "Texture imag
 #include <chrono>
 #include "ExternalIncludes.h"
 #include "Vertex.h"
+#include "Model.h"
 
 struct UniformBufferObject {
 	alignas(16) glm::mat4 model;
@@ -50,119 +51,35 @@ struct UniformBufferObject {
 };
 
 class TriangleApplication {
-public:
-	TriangleApplication();
-
-	void run() {
-		initWindow();
-		initVulkan();
-		mainLoop();
-		cleanup();
-	}
-
 private:
-	GLFWwindow *window{};
-	static const int WIDTH{800};
-	static const int HEIGHT{600};
-
-	void initWindow();
-
-	void initVulkan() {
-		initVulkanBeforePipeline();
-		createGraphicsPipeline();
-		initVulkanAfterPipeline();
-	}
-
-	void mainLoop();
-
-	void cleanup();
-
-
-	void initVulkanBeforePipeline();
-
-	void createGraphicsPipeline() {
-		auto bindingDescription = Vertex::getBindingDescription();
-		auto attributeDescriptions = Vertex::getAttributeDescriptions();
-		createGraphicsPipelineFromDescriptions(bindingDescription, attributeDescriptions);
-	}
-
-	void initVulkanAfterPipeline();
-
-	VkInstance instance{};
-
-	void createInstance();
-
-	VkDebugUtilsMessengerEXT debugMessenger{};
-
-	void setupDebugMessenger();
-
-	VkSurfaceKHR surface{};
-
-	void createSurface();
-
-	VkPhysicalDevice physicalDevice{};
-
-	void pickPhysicalDevice();
-
-	VkDevice device{};
-
-	void createLogicalDevice();
-
-	VkSwapchainKHR swapChain{};
-
-	void createSwapChain();
-
-
-	std::vector<VkImage> swapChainImages{};
-	VkFormat swapChainImageFormat{};
-	VkExtent2D swapChainExtent{};
-	std::vector<VkImageView> swapChainImageViews{};
-
-	void createImageViews();
-
-	VkRenderPass renderPass{};
-
-	void createRenderPass();
-
-	VkDescriptorSetLayout descriptorSetLayout{};
-
-	void createDescriptorSetLayout();
-
-	static const int MAX_FRAMES_IN_FLIGHT = 2;
-
-	struct QueueFamilyIndices {
-		std::optional<uint32_t> graphicsFamily;
-		std::optional<uint32_t> presentFamily;
-
-		bool isComplete() {
-			return graphicsFamily.has_value() && presentFamily.has_value();
-		}
-	};
-
-	struct SwapChainSupportDetails {
-		VkSurfaceCapabilitiesKHR capabilities{};
-		std::vector<VkSurfaceFormatKHR> formats{};
-		std::vector<VkPresentModeKHR> presentModes{};
-	};
-
+	//Constants
 	static inline constexpr std::array<const char *, 1> requiredDeviceExtensions{
 			VK_KHR_SWAPCHAIN_EXTENSION_NAME
 	};
 	static inline constexpr std::array<const char *, 1> validationLayers{
 			"VK_LAYER_KHRONOS_validation"
 	};
-	// Done so that validation can be toggled in the future
-	//	static const bool enableValidationLayers = true;
-
-
-
-
-	VkQueue graphicsQueue{};
-	VkQueue presentQueue{};
-
-
+	static const int WIDTH{800};
+	static const int HEIGHT{600};
+	static const int MAX_FRAMES_IN_FLIGHT = 2;
+	//Instance
+	GLFWwindow *window{};
+	VkInstance instance{};
+	VkSurfaceKHR surface{};
+	VkPhysicalDevice physicalDevice{};
+	VkDevice device{};
+	VkDebugUtilsMessengerEXT debugMessenger{};
+	VkSwapchainKHR swapChain{};
+	std::vector<VkImage> swapChainImages{};
+	VkFormat swapChainImageFormat{};
+	VkExtent2D swapChainExtent{};
+	std::vector<VkImageView> swapChainImageViews{};
+	VkRenderPass renderPass{};
+	VkDescriptorSetLayout descriptorSetLayout{};
 	VkPipelineLayout pipelineLayout{};
 	VkPipeline graphicsPipeline{};
+	VkQueue graphicsQueue{};
+	VkQueue presentQueue{};
 	std::vector<VkFramebuffer> swapChainFramebuffers{};
 	VkCommandPool commandPool{};
 	std::vector<VkCommandBuffer> commandBuffers{};
@@ -188,14 +105,79 @@ private:
 	VkImage colorImage{};
 	VkDeviceMemory colorImageMemory{};
 	VkImageView colorImageView{};
-
 	VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
-
 	std::vector<VkBuffer> uniformBuffers{};
 	std::vector<VkDeviceMemory> uniformBuffersMemory{};
 	VkDescriptorPool descriptorPool{};
-	std::vector<VkDescriptorSet> descriptorSets{};
 
+	// Done so that validation can be toggled in the future
+	//	static const bool enableValidationLayers = true;
+	std::vector<VkDescriptorSet> descriptorSets{};
+public:
+	TriangleApplication();
+
+	void run() {
+		initWindow();
+		initVulkan();
+		mainLoop();
+		cleanup();
+	}
+
+private:
+	struct QueueFamilyIndices {
+		std::optional<uint32_t> graphicsFamily;
+		std::optional<uint32_t> presentFamily;
+
+		bool isComplete() {
+			return graphicsFamily.has_value() && presentFamily.has_value();
+		}
+	};
+
+	struct SwapChainSupportDetails {
+		VkSurfaceCapabilitiesKHR capabilities{};
+		std::vector<VkSurfaceFormatKHR> formats{};
+		std::vector<VkPresentModeKHR> presentModes{};
+	};
+
+	void initWindow();
+
+	void initVulkan() {
+		initVulkanBeforePipeline();
+		createGraphicsPipeline();
+		initVulkanAfterPipeline();
+	}
+
+	void mainLoop();
+
+	void cleanup();
+
+	void initVulkanBeforePipeline();
+
+	void createGraphicsPipeline() {
+		auto bindingDescription = Vertex::getBindingDescription();
+		auto attributeDescriptions = Vertex::getAttributeDescriptions();
+		createGraphicsPipelineFromDescriptions(bindingDescription, attributeDescriptions);
+	}
+
+	void initVulkanAfterPipeline();
+
+	void createInstance();
+
+	void setupDebugMessenger();
+
+	void createSurface();
+
+	void pickPhysicalDevice();
+
+	void createLogicalDevice();
+
+	void createSwapChain();
+
+	void createImageViews();
+
+	void createRenderPass();
+
+	void createDescriptorSetLayout();
 
 	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
 
@@ -204,7 +186,6 @@ private:
 	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
 
 	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo) const;
-
 
 	bool checkDeviceExtensionSupport(VkPhysicalDevice device);
 
@@ -217,7 +198,6 @@ private:
 	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities);
 
 	size_t scoreDevice(VkPhysicalDevice device);
-
 
 	void createGraphicsPipelineFromDescriptions(VkVertexInputBindingDescription &bindingDescription,
 	                                            std::array<VkVertexInputAttributeDescription, 3> &attributeDescriptions);
@@ -249,7 +229,6 @@ private:
 	void createVertexBuffer();
 
 	void createIndexBuffer();
-
 
 	void createUniformBuffers();
 
@@ -283,7 +262,6 @@ private:
 
 	void generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
 
-
 	VkFormat
 	findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
@@ -311,7 +289,6 @@ private:
 	void updateUniformBuffer(uint32_t currentImage);
 
 	void drawFrame();
-
 
 	static void framebufferResizeCallback(GLFWwindow *window, int width, int height);
 
