@@ -1165,11 +1165,9 @@ bool TriangleApplication::checkDeviceExtensionSupport(vk::PhysicalDevice deviceT
 
 void TriangleApplication::pickPhysicalDevice() {
 	using namespace std;
-	uint32_t deviceCount{};
-	vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
-	if (deviceCount == 0) throw runtime_error(NO_VULK_DEV_AVAILABLE_MSG);
-	vector<vk::PhysicalDevice> devices(deviceCount);
-	vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+	vector<vk::PhysicalDevice> devices{};
+	instance.enumeratePhysicalDevices(devices.get_allocator());
+	if (devices.empty()) throw runtime_error(NO_VULK_DEV_AVAILABLE_MSG);
 	devices.erase(find_if(devices.begin(), devices.end(),
 	                      [&](vk::PhysicalDevice &dev) { return !isDeviceSuitable(dev); }), devices.end());
 	if (devices.empty()) throw runtime_error(VULK_DEV_NOT_SUITABLE_MSG);
