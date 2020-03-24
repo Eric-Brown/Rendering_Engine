@@ -404,7 +404,7 @@ void TriangleApplication::createTextureImage() {
 	            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 	            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
 
-	transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED,
+	transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_UNORM, vk::ImageLayout::eUndefined,
 	                      vk::ImageLayout::eTransferDstOptimal, mipLevels);
 	copyBufferToImage(stagingBuffer, textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
 	generateMipmaps(textureImage, VK_FORMAT_R8G8B8A8_UNORM, texWidth, texHeight, mipLevels);
@@ -462,7 +462,7 @@ TriangleApplication::createImage(uint32_t width, uint32_t height, uint32_t image
 	imageInfo.arrayLayers = 1;
 	imageInfo.format = format;
 	imageInfo.tiling = tiling;
-	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	imageInfo.initialLayout = vk::ImageLayout::eUndefined;
 	imageInfo.usage = usage;
 	imageInfo.samples = numSamples;
 	imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -685,7 +685,7 @@ void TriangleApplication::transitionImageLayout(vk::Image image, vk::Format form
 	barrier.dstAccessMask = 0; // TODO
 	vk::PipelineStageFlags sourceStage;
 	vk::PipelineStageFlags destinationStage;
-	if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+	if (newLayout == vk::ImageLayout::eDepthStencilAttachmentOptimal) {
 		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 
 		if (hasStencilComponent(format)) {
@@ -694,7 +694,7 @@ void TriangleApplication::transitionImageLayout(vk::Image image, vk::Format form
 	} else {
 		barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
 	}
-	if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == vk::ImageLayout::eTransferDstOptimal) {
+	if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eTransferDstOptimal) {
 		barrier.srcAccessMask = 0;
 		barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
 
@@ -707,8 +707,8 @@ void TriangleApplication::transitionImageLayout(vk::Image image, vk::Format form
 
 		sourceStage = vk::PipelineStageFlagBits::eTransfer;
 		destinationStage = vk::PipelineStageFlagBits::eFragmentShader;
-	} else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED &&
-	           newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+	} else if (oldLayout == vk::ImageLayout::eUndefined &&
+	           newLayout == vk::ImageLayout::eDepthStencilAttachmentOptimal) {
 		barrier.srcAccessMask = 0;
 		barrier.dstAccessMask =
 				VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
@@ -916,65 +916,30 @@ void TriangleApplication::createFramebuffers() {
 }
 
 void TriangleApplication::createRenderPass() {
-	vk::AttachmentDescription colorAttachment{};
-	colorAttachment.format = swapChainImageFormat;
-	colorAttachment.samples = msaaSamples;
-	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	vk::AttachmentDescription depthAttachment{};
-	depthAttachment.format = findDepthFormat();
-	depthAttachment.samples = msaaSamples;
-	depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-	vk::AttachmentDescription colorAttachmentResolve = {};
-	colorAttachmentResolve.format = swapChainImageFormat;
-	colorAttachmentResolve.samples = vk::SampleCountFlagBits::e1;
-	colorAttachmentResolve.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	colorAttachmentResolve.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	colorAttachmentResolve.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	colorAttachmentResolve.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	colorAttachmentResolve.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	colorAttachmentResolve.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-	vk::AttachmentReference colorAttachmentRef = {};
-	colorAttachmentRef.attachment = 0;
-	colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	vk::AttachmentReference depthAttachmentRef = {};
-	depthAttachmentRef.attachment = 1;
-	depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-	vk::AttachmentReference colorAttachmentResolveRef = {};
-	colorAttachmentResolveRef.attachment = 2;
-	colorAttachmentResolveRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	vk::SubpassDescription subpass = {};
-	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	subpass.colorAttachmentCount = 1;
-	subpass.pColorAttachments = &colorAttachmentRef;
-	subpass.pDepthStencilAttachment = &depthAttachmentRef;
-	subpass.pResolveAttachments = &colorAttachmentResolveRef;
+	vk::AttachmentDescription colorAttachment({}, swapChainImageFormat, msaaSamples, vk::AttachmentLoadOp::eClear,
+	                                          vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eDontCare,
+	                                          vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined,
+	                                          vk::ImageLayout::eColorAttachmentOptimal);
+	vk::AttachmentDescription depthAttachment({}, findDepthFormat(), msaaSamples, vk::AttachmentLoadOp::eClear,
+	                                          vk::AttachmentStoreOp::eDontCare, vk::AttachmentLoadOp::eDontCare,
+	                                          vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined,
+	                                          vk::ImageLayout::eDepthStencilAttachmentOptimal);
+	vk::AttachmentDescription colorAttachmentResolve({}, swapChainImageFormat, vk::SampleCountFlagBits::e1,
+	                                                 vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eStore,
+	                                                 vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eDontCare,
+	                                                 vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
+	vk::AttachmentReference colorAttachmentRef(0, vk::ImageLayout::eColorAttachmentOptimal);
+	vk::AttachmentReference depthAttachmentRef(1, vk::ImageLayout::eDepthStencilAttachmentOptimal);
+	vk::AttachmentReference colorAttachmentResolveRef(2, vk::ImageLayout::eColorAttachmentOptimal);
+	vk::SubpassDescription subpass({}, vk::PipelineBindPoint::eGraphics, {}, {}, 1, &colorAttachmentRef,
+	                               &colorAttachmentResolveRef, &depthAttachmentRef);
 	std::array<vk::AttachmentDescription, 3> attachments = {colorAttachment, depthAttachment, colorAttachmentResolve};
-	vk::SubpassDependency dependency = {};
-	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-	dependency.dstSubpass = 0;
-	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependency.srcAccessMask = 0;
-	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	vk::RenderPassCreateInfo renderPassInfo = {};
-	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-	renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-	renderPassInfo.pAttachments = attachments.data();
-	renderPassInfo.subpassCount = 1;
-	renderPassInfo.pSubpasses = &subpass;
-	renderPassInfo.dependencyCount = 1;
-	renderPassInfo.pDependencies = &dependency;
-	if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != vk::Result::eSuccess) {
+	vk::SubpassDependency dependency(VK_SUBPASS_EXTERNAL, 0, vk::PipelineStageFlagBits::eColorAttachmentOutput,
+	                                 vk::PipelineStageFlagBits::eColorAttachmentOutput, {},
+	                                 vk::AccessFlagBits::eColorAttachmentRead |
+	                                 vk::AccessFlagBits::eColorAttachmentWrite);
+	vk::RenderPassCreateInfo renderPassInfo({}, attachments.size(), attachments.data(), 1, &subpass, 1, &dependency);
+	if (device.createRenderPass(&renderPassInfo, nullptr, &renderPass) != vk::Result::eSuccess) {
 		throw std::runtime_error(RENDER_PASS_CREATE_FAIL_MSG);
 	}
 
