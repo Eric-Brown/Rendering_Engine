@@ -1105,10 +1105,10 @@ vk::Extent2D TriangleApplication::chooseSwapExtent(const vk::SurfaceCapabilities
 vk::PresentModeKHR
 TriangleApplication::chooseSwapPresentMode(const std::vector<vk::PresentModeKHR> &availablePresentModes) {
 	using namespace std;
-	vk::PresentModeKHR bestMode = VK_PRESENT_MODE_FIFO_KHR;
-	auto supports_mailbox = [&](const vk::PresentModeKHR &val) { return val == VK_PRESENT_MODE_MAILBOX_KHR; };
+	vk::PresentModeKHR bestMode = vk::PresentModeKHR::eFifo;
+	auto supports_mailbox = [&](const vk::PresentModeKHR &val) { return val == vk::PresentModeKHR::eMailbox; };
 	auto supports_fifo_immediate = [&](const vk::PresentModeKHR &val) {
-		return bestMode == VK_PRESENT_MODE_FIFO_KHR && val == VK_PRESENT_MODE_IMMEDIATE_KHR;
+		return bestMode == vk::PresentModeKHR::eFifo && val == vk::PresentModeKHR::eImmediate;
 	};
 	auto best = find_if(availablePresentModes.begin(), availablePresentModes.end(), supports_mailbox);
 	if (best == availablePresentModes.end()) {
