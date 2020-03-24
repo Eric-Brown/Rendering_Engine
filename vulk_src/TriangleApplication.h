@@ -109,7 +109,6 @@ private:
 	std::vector<vk::Buffer> uniformBuffers{};
 	std::vector<vk::DeviceMemory> uniformBuffersMemory{};
 	vk::DescriptorPool descriptorPool{};
-
 	// Done so that validation can be toggled in the future
 	//	static const bool enableValidationLayers = true;
 	std::vector<vk::DescriptorSet> descriptorSets{};
@@ -286,11 +285,10 @@ private:
 
 	void validateLayerSupport();
 
-	static VKAPI_ATTR vk::Bool32 VKAPI_CALL debugCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-	                                                      vk::DebugUtilsMessageTypeFlagsEXT messageType,
-	                                                      const vk::DebugUtilsMessengerCallbackDataEXT *pCallbackData,
+	static VKAPI_ATTR vk::Bool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+	                                                      VkDebugUtilsMessageTypeFlagsEXT messageType,
+	                                                      const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
 	                                                      void *pUserData);
-
 	void updateUniformBuffer(uint32_t currentImage);
 
 	void drawFrame();

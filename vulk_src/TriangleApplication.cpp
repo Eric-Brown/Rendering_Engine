@@ -206,12 +206,12 @@ void TriangleApplication::updateUniformBuffer(uint32_t currentImage) {
 	vkUnmapMemory(device, uniformBuffersMemory[currentImage]);
 }
 
-vk::Bool32 TriangleApplication::debugCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                                              vk::DebugUtilsMessageTypeFlagsEXT,
-                                              const vk::DebugUtilsMessengerCallbackDataEXT *pCallbackData,
+vk::Bool32 TriangleApplication::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                                              VkDebugUtilsMessageTypeFlagsEXT,
+                                              const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
                                               void *) {
 	using namespace std;
-	if (messageSeverity >= vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning) {
+	if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
 		cerr << "Validation layer: " << pCallbackData->pMessage << endl;
 	}
 	// Only true if wanting the call to be aborted...generally only used for testing Validation Layers
@@ -1181,18 +1181,14 @@ void TriangleApplication::pickPhysicalDevice() {
 }
 
 void TriangleApplication::populateDebugMessengerCreateInfo(vk::DebugUtilsMessengerCreateInfoEXT &createInfo) const {
-	vk::DebugUtilsMessengerCreateInfoEXT info{};
-	info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-	info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
-	                       VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-	                       VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-	info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
-	                   VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-	                   VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-	info.pfnUserCallback = debugCallback;
-	info.pUserData = nullptr; // Optional
-	createInfo = info;
+	vk::DebugUtilsMessengerCreateInfoEXT info({}, vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |
+	                                              vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
+	                                              vk::DebugUtilsMessageSeverityFlagBitsEXT::eError,
+	                                          vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
+	                                          vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
+	                                          vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance, debugCallback, {});
 
+	createInfo = info;
 }
 
 TriangleApplication::SwapChainSupportDetails
