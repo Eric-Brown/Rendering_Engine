@@ -791,53 +791,38 @@ void TriangleApplication::createSyncObjects() {
 }
 
 void TriangleApplication::createCommandBuffers() {
+	using namespace std;
+	vk::CommandBufferAllocateInfo allocInfo(commandPool, vk::CommandBufferLevel::ePrimary,
+	                                        static_cast<uint32_t>(swapChainFramebuffers.size()));
 	commandBuffers.resize(swapChainFramebuffers.size());
-	vk::CommandBufferAllocateInfo allocInfo = {};
-	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	allocInfo.commandPool = commandPool;
-	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	allocInfo.commandBufferCount = (uint32_t) commandBuffers.size();
-	if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()) != vk::Result::eSuccess) {
-		throw std::runtime_error("failed to allocate command buffers!");
+	if (device.allocateCommandBuffers(&allocInfo, commandBuffers.data()) != vk::Result::eSuccess) {
+		throw runtime_error("failed to allocate command buffers!");
 	}
-
-	for (size_t i = 0; i < commandBuffers.size(); i++) {
-		vk::CommandBufferBeginInfo beginInfo = {};
-		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-		beginInfo.pInheritanceInfo = nullptr; // Optional
-		if (vkBeginCommandBuffer(commandBuffers[i], &beginInfo) != vk::Result::eSuccess) {
-			throw std::runtime_error("failed to begin recording command buffer!");
-		}
-		vk::RenderPassBeginInfo renderPassInfo = {};
-		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		renderPassInfo.renderPass = renderPass;
-		renderPassInfo.framebuffer = swapChainFramebuffers[i];
-		renderPassInfo.renderArea.offset = {0, 0};
-		renderPassInfo.renderArea.extent = swapChainExtent;
-		std::array<vk::ClearValue, 2> clearValues = {};
-		clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
-		clearValues[1].depthStencil = {1.0f, 0}; // reset to furthest value away
-		renderPassInfo.clearValueCount = static_cast<uint32_t > (clearValues.size());
-		renderPassInfo.pClearValues = clearValues.data();
-		vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-		vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+	vector<tuple<vk::CommandBuffer &, vk::Framebuffer &>> bufferViews{};
+	for (auto i{0}; i < swapChainFramebuffers.size(); i++) {
+		bufferViews.push_back(tie(commandBuffers[i], swapChainFramebuffers[i]));
+	}
+	for (auto&[buffer, framebuffer] : bufferViews) {
+		vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
+		buffer.begin(beginInfo);
+		vk::Rect2D renderArea{vk::Offset2D(0, 0), swapChainExtent};
+		array<float, 4> clearColor{0.0f, 0.0f, 0.0f, 1.0f};
+		vk::ClearDepthStencilValue depthStencilValue{1.0f, 0};
+		array<vk::ClearValue, 2> clearValues{vk::ClearColorValue(clearColor), depthStencilValue};
+		vk::RenderPassBeginInfo renderPassInfo(renderPass, framebuffer, renderArea, clearValues.size(),
+		                                       clearValues.data());
+		buffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
+		buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, graphicsPipeline);
 		vk::Buffer vertexBuffers[] = {vertexBuffer};
 		vk::DeviceSize offsets[] = {0};
-		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
-		vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1,
-		                        &descriptorSets[i], 0, nullptr);
-		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
-		vkCmdEndRenderPass(commandBuffers[i]);
-		if (vkEndCommandBuffer(commandBuffers[i]) != vk::Result::eSuccess) {
-			throw std::runtime_error("failed to record command buffer!");
-		}
-
-
+		buffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
+		buffer.bindIndexBuffer(indexBuffer, offsets[0], vk::IndexType::eUint32);
+		buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout, 0, 1, descriptorSets.data(), 0,
+		                          nullptr);
+		buffer.drawIndexed(static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+		buffer.endRenderPass();
+		buffer.end();
 	}
-
-
 }
 
 void TriangleApplication::cleanupSwapChain() {
