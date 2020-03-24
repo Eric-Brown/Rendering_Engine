@@ -877,13 +877,8 @@ void TriangleApplication::cleanupImageResources() const {
 
 void TriangleApplication::createCommandPool() {
 	QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice);
-	vk::CommandPoolCreateInfo poolInfo{
-			VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-			nullptr,
-			0, // Optional flags
-			queueFamilyIndices.graphicsFamily.value()
-	};
-	if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != vk::Result::eSuccess) {
+	vk::CommandPoolCreateInfo poolInfo({}, queueFamilyIndices.graphicsFamily.value());
+	if (device.createCommandPool(&poolInfo, nullptr, &commandPool) != vk::Result::eSuccess) {
 		throw std::runtime_error(COMMAND_POOL_FAIL_CREATE_MSG);
 	}
 }
