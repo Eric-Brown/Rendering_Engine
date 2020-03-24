@@ -1231,7 +1231,7 @@ TriangleApplication::QueueFamilyIndices TriangleApplication::findQueueFamilies(v
 	uint32_t queueFamilyCount = 0;
 	vkGetPhysicalDeviceQueueFamilyProperties(deviceToSearch, &queueFamilyCount, nullptr);
 	std::vector<vk::QueueFamilyProperties> queueFamilies(queueFamilyCount);
-	vkGetPhysicalDeviceQueueFamilyProperties(deviceToSearch, &queueFamilyCount, queueFamilies.data());
+	deviceToSearch.getQueueFamilyProperties(&queueFamilyCount, queueFamilies.data());
 	uint32_t i = 0;
 	vk::Bool32 presentSupport{VK_FALSE};
 	for (const auto &queueFamily : queueFamilies) {
