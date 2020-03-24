@@ -465,7 +465,7 @@ TriangleApplication::createImage(uint32_t width, uint32_t height, uint32_t image
 	imageInfo.initialLayout = vk::ImageLayout::eUndefined;
 	imageInfo.usage = usage;
 	imageInfo.samples = numSamples;
-	imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	imageInfo.sharingMode = vk::SharingMode::eExclusive;
 
 	if (vkCreateImage(device, &imageInfo, nullptr, &image) != vk::Result::eSuccess) {
 		throw std::runtime_error("failed to create image!");
@@ -746,48 +746,25 @@ void TriangleApplication::copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer,
 void
 TriangleApplication::createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties,
                                   vk::Buffer &buffer, vk::DeviceMemory &bufferMemory) {
-	vk::BufferCreateInfo bufferInfo = {};
-	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	bufferInfo.size = size;
-	bufferInfo.usage = usage;
-	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-	if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != vk::Result::eSuccess) {
-		throw std::runtime_error("failed to create buffer!");
-	}
-
-	vk::MemoryRequirements memRequirements;
-	vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
-
-	vk::MemoryAllocateInfo allocInfo = {};
-	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocInfo.allocationSize = memRequirements.size;
-	allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
-
-	if (vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory) != vk::Result::eSuccess) {
-		throw std::runtime_error("failed to allocate buffer memory!");
-	}
-	vkBindBufferMemory(device, buffer, bufferMemory, 0);
-
+	vk::BufferCreateInfo bufferInfo({}, size, usage, vk::SharingMode::eExclusive);
+	buffer = device.createBuffer(bufferInfo);
+	vk::MemoryRequirements memRequirements{device.getBufferMemoryRequirements(buffer)};
+	vk::MemoryAllocateInfo allocInfo(memRequirements.size, findMemoryType(memRequirements.memoryTypeBits, properties));
+	bufferMemory = device.allocateMemory(allocInfo);
+	device.bindBufferMemory(buffer, bufferMemory, 0);
 }
 
 void TriangleApplication::createSyncObjects() {
 	imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
 	renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
 	inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
-	vk::SemaphoreCreateInfo semaphoreInfo = {};
-	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-	vk::FenceCreateInfo fenceInfo = {};
-	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-	fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+	vk::SemaphoreCreateInfo semaphoreInfo{};
+	vk::FenceCreateInfo fenceInfo{vk::FenceCreateFlagBits::eSignaled};
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-		if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != vk::Result::eSuccess ||
-		    vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != vk::Result::eSuccess ||
-		    vkCreateFence(device, &fenceInfo, nullptr, &inFlightFences[i]) != vk::Result::eSuccess) {
-			throw std::runtime_error("failed to create synchronization objects for a frame!");
-		}
+		imageAvailableSemaphores[i] = device.createSemaphore(semaphoreInfo);
+		renderFinishedSemaphores[i] = device.createSemaphore(semaphoreInfo);
+		inFlightFences[i] = device.createFence(fenceInfo);
 	}
-
 }
 
 void TriangleApplication::createCommandBuffers() {
