@@ -1152,10 +1152,8 @@ bool TriangleApplication::isDeviceSuitable(vk::PhysicalDevice deviceToTest) {
 
 bool TriangleApplication::checkDeviceExtensionSupport(vk::PhysicalDevice deviceToCheck) {
 	using namespace std;
-	uint32_t extCount{};
-	vkEnumerateDeviceExtensionProperties(deviceToCheck, nullptr, &extCount, nullptr);
-	vector<vk::ExtensionProperties> availableExtensions(extCount);
-	vkEnumerateDeviceExtensionProperties(deviceToCheck, nullptr, &extCount, availableExtensions.data());
+	vector<vk::ExtensionProperties> availableExtensions{};
+	deviceToCheck.enumerateDeviceExtensionProperties(nullptr,availableExtensions.get_allocator());
 	set<string> requiredExtensions{requiredDeviceExtensions.begin(), requiredDeviceExtensions.end()};
 	for (const auto &extension : availableExtensions) {
 		requiredExtensions.erase(extension.extensionName);
