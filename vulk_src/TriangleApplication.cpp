@@ -998,37 +998,23 @@ void TriangleApplication::createSwapChain() {
 	imageCount = std::clamp(imageCount,
 	                        swapChainSupport.capabilities.minImageCount,
 	                        std::max(imageCount, swapChainSupport.capabilities.maxImageCount));
-	vk::SwapchainCreateInfoKHR createInfo = {};
-	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-	createInfo.surface = surface;
-	createInfo.minImageCount = imageCount;
-	createInfo.imageFormat = surfaceFormat.format;
-	createInfo.imageColorSpace = surfaceFormat.colorSpace;
-	createInfo.imageExtent = extent;
-	createInfo.imageArrayLayers = 1u;
-	createInfo.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
+	vk::SwapchainCreateInfoKHR createInfo({}, surface, imageCount, surfaceFormat.format, surfaceFormat.colorSpace,
+	                                      extent, 1u, vk::ImageUsageFlagBits::eColorAttachment);
 	QueueFamilyIndices queueIndices = findQueueFamilies(physicalDevice);
 	uint32_t queueFamilyIndices[] = {queueIndices.graphicsFamily.value(), queueIndices.presentFamily.value()};
 	if (queueIndices.graphicsFamily != queueIndices.presentFamily) {
-		createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+		createInfo.imageSharingMode = vk::SharingMode::eConcurrent;
 		createInfo.queueFamilyIndexCount = 2u;
 		createInfo.pQueueFamilyIndices = queueFamilyIndices;
-	} else {
-		createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-		createInfo.queueFamilyIndexCount = 0; // Optional
-		createInfo.pQueueFamilyIndices = nullptr; // Optional
 	}
 	createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
-	createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+	createInfo.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
 	createInfo.presentMode = presentMode;
 	createInfo.clipped = VK_TRUE;
-	createInfo.oldSwapchain = VK_NULL_HANDLE;
-	if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != vk::Result::eSuccess) {
+	if (device.createSwapchainKHR(&createInfo, nullptr, &swapChain) != vk::Result::eSuccess) {
 		throw std::runtime_error(SWAP_CHAIN_CREATE_FAIL_MSG);
 	}
-	vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr);
-	swapChainImages.resize(imageCount);
-	vkGetSwapchainImagesKHR(device, swapChain, &imageCount, swapChainImages.data());
+	device.getSwapchainImagesKHR(swapChain, swapChainImages.get_allocator());
 	swapChainImageFormat = surfaceFormat.format;
 	swapChainExtent = extent;
 }
