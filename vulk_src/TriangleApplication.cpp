@@ -1198,19 +1198,13 @@ void TriangleApplication::populateDebugMessengerCreateInfo(vk::DebugUtilsMesseng
 TriangleApplication::SwapChainSupportDetails
 TriangleApplication::querySwapChainSupport(vk::PhysicalDevice deviceToQuery) {
 	SwapChainSupportDetails details;
-	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(deviceToQuery, surface, &details.capabilities);
-	uint32_t formatCount;
-	vkGetPhysicalDeviceSurfaceFormatsKHR(deviceToQuery, surface, &formatCount, nullptr);
-	if (formatCount != 0) {
-		details.formats.resize(formatCount);
-		vkGetPhysicalDeviceSurfaceFormatsKHR(deviceToQuery, surface, &formatCount, details.formats.data());
-	}
+	deviceToQuery.getSurfaceCapabilitiesKHR(surface, &details.capabilities);
+	deviceToQuery.getSurfaceFormatsKHR(surface, details.formats.get_allocator());
 	uint32_t presentModeCount;
 	vkGetPhysicalDeviceSurfacePresentModesKHR(deviceToQuery, surface, &presentModeCount, nullptr);
 	if (presentModeCount != 0) {
 		details.presentModes.resize(presentModeCount);
-		vkGetPhysicalDeviceSurfacePresentModesKHR(deviceToQuery, surface, &presentModeCount,
-		                                          details.presentModes.data());
+		deviceToQuery.getSurfacePresentModesKHR(surface, &presentModeCount, details.presentModes.data());
 	}
 	return details;
 }
@@ -1237,7 +1231,7 @@ TriangleApplication::QueueFamilyIndices TriangleApplication::findQueueFamilies(v
 	for (const auto &queueFamily : queueFamilies) {
 		vkGetPhysicalDeviceSurfaceSupportKHR(deviceToSearch, i, surface, &presentSupport);
 		if (queueFamily.queueCount > 0) {
-			if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+			if (queueFamily.queueFlags & vk::QueueFlagBits::eGraphics) {
 				queueIndices.graphicsFamily = i;
 			}
 			if (presentSupport) {
