@@ -1312,65 +1312,20 @@ void TriangleApplication::createGraphicsPipelineFromDescriptions(vk::VertexInput
 	auto fraMod{createShaderModule(frag)};
 	bindingDescription = Vertex::getBindingDescription();
 	attributeDescriptions = Vertex::getAttributeDescriptions();
-	vk::PipelineShaderStageCreateInfo vertShaderStageInfo{};
-	vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-	vertShaderStageInfo.module = verMod;
-	vertShaderStageInfo.pName = "main"; //entry point name
-	vk::PipelineShaderStageCreateInfo fragShaderStageInfo{};
-	fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-	fragShaderStageInfo.module = fraMod;
-	fragShaderStageInfo.pName = "main";
+	vk::PipelineShaderStageCreateInfo vertShaderStageInfo({}, vk::ShaderStageFlagBits::eVertex, verMod, "main", {});
+	vk::PipelineShaderStageCreateInfo fragShaderStageInfo({}, vk::ShaderStageFlagBits::eFragment, fraMod, "main", {});
 	vk::PipelineShaderStageCreateInfo stages[] = {vertShaderStageInfo, fragShaderStageInfo};
 	vk::VertexInputBindingDescription &bindingDescription1 = bindingDescription;
-	vk::PipelineVertexInputStateCreateInfo vertexInputInfo = {};
-	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	vertexInputInfo.vertexBindingDescriptionCount = 1;
-	vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
-	vertexInputInfo.pVertexBindingDescriptions = &bindingDescription1;
-	vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
-	vk::PipelineInputAssemblyStateCreateInfo inputAssembly = {};
-	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-	inputAssembly.primitiveRestartEnable = VK_FALSE;
-	vk::Viewport viewport = {};
-	viewport.x = 0.0f;
-	viewport.y = 0.0f;
-	viewport.width = (float) swapChainExtent.width;
-	viewport.height = (float) swapChainExtent.height;
-	viewport.minDepth = 0.0f;
-	viewport.maxDepth = 1.0f;
-	vk::Rect2D scissor = {};
-	scissor.offset = {0, 0};
-	scissor.extent = swapChainExtent;
-	vk::PipelineViewportStateCreateInfo viewportState = {};
-	viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-	viewportState.viewportCount = 1;
-	viewportState.pViewports = &viewport;
-	viewportState.scissorCount = 1;
-	viewportState.pScissors = &scissor;
-	vk::PipelineRasterizationStateCreateInfo rasterizer = {};
-	rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-	rasterizer.depthClampEnable = VK_FALSE;
-	rasterizer.rasterizerDiscardEnable = VK_FALSE;
-	rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-	rasterizer.lineWidth = 1.0f;
-	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-	rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-	rasterizer.depthBiasEnable = VK_FALSE;
-	rasterizer.depthBiasConstantFactor = 0.0f; // Optional
-	rasterizer.depthBiasClamp = 0.0f; // Optional
-	rasterizer.depthBiasSlopeFactor = 0.0f; // Optional
-	vk::PipelineMultisampleStateCreateInfo multisampling = {};
-	multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-	multisampling.sampleShadingEnable = VK_TRUE;
-	multisampling.rasterizationSamples = msaaSamples;
-	multisampling.minSampleShading = .2f; // Optional
-	multisampling.pSampleMask = nullptr; // Optional
-	multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
-	multisampling.alphaToOneEnable = VK_FALSE; // Optional
-
+	vk::PipelineVertexInputStateCreateInfo vertexInputInfo({}, 1, &bindingDescription1, attributeDescriptions.size(),
+	                                                       attributeDescriptions.data());
+	vk::PipelineInputAssemblyStateCreateInfo inputAssembly({}, vk::PrimitiveTopology::eTriangleList, VK_FALSE);
+	vk::Viewport viewport(0.0f, 0.0f, swapChainExtent.width, swapChainExtent.height, 0.0f, 1.0f);
+	vk::Rect2D scissor(vk::Offset2D{0, 0}, swapChainExtent);
+	vk::PipelineViewportStateCreateInfo viewportState({}, 1, &viewport, 1, &scissor);
+	vk::PipelineRasterizationStateCreateInfo rasterizer({}, VK_FALSE, VK_FALSE, vk::PolygonMode::eFill,
+	                                                    vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise,
+	                                                    VK_FALSE, {}, {}, {}, 1.0f);
+	vk::PipelineMultisampleStateCreateInfo multisampling({}, msaaSamples, VK_TRUE, 0.2f, {}, VK_FALSE, VK_FALSE);
 	vk::PipelineColorBlendAttachmentState colorBlendAttachment(VK_FALSE, vk::BlendFactor::eOne, vk::BlendFactor::eZero,
 	                                                           vk::BlendOp::eAdd, vk::BlendFactor::eOne,
 	                                                           vk::BlendFactor::eZero, vk::BlendOp::eAdd,
@@ -1382,7 +1337,7 @@ void TriangleApplication::createGraphicsPipelineFromDescriptions(vk::VertexInput
 	vk::PipelineColorBlendStateCreateInfo colorBlending({}, VK_FALSE, vk::LogicOp::eCopy, 1, &colorBlendAttachment,
 	                                                    blendConstants);
 	vk::PipelineLayoutCreateInfo pipelineLayoutInfo({}, 1, &descriptorSetLayout, 0, {});
-	if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != vk::Result::eSuccess) {
+	if (device.createPipelineLayout(&pipelineLayoutInfo, nullptr, &pipelineLayout) != vk::Result::eSuccess) {
 		throw std::runtime_error(PIPELINE_LAYOUT_CREATE_FAIL_MSG);
 	}
 	vk::PipelineDepthStencilStateCreateInfo depthStencil({}, VK_TRUE, VK_TRUE, vk::CompareOp::eLess, VK_FALSE, VK_FALSE,
