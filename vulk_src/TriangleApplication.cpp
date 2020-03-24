@@ -735,11 +735,8 @@ void TriangleApplication::transitionImageLayout(vk::Image image, vk::Format form
 
 void TriangleApplication::copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size) {
 	vk::CommandBuffer commandBuffer = beginSingleTimeCommands();
-
-	vk::BufferCopy copyRegion = {};
-	copyRegion.size = size;
-	vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
-
+	vk::BufferCopy copyRegion({}, {}, size);
+	commandBuffer.copyBuffer(srcBuffer, dstBuffer, 1, &copyRegion);
 	endSingleTimeCommands(commandBuffer);
 }
 
