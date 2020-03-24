@@ -890,29 +890,13 @@ void TriangleApplication::createCommandPool() {
 
 void TriangleApplication::createFramebuffers() {
 	swapChainFramebuffers.resize(swapChainImageViews.size());
-	for (unsigned long i{0}; i < swapChainImageViews.size(); i++) {
-		std::array<vk::ImageView, 3> attachments[] = {
-				{colorImageView,
-						depthImageView,
-						swapChainImageViews[i]}
-
-		};
-		vk::FramebufferCreateInfo framebufferInfo{
-				VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
-				nullptr,
-				0, //Optional flags
-				renderPass,
-				static_cast<uint32_t >(attachments->size()),
-				attachments->data(),
-				swapChainExtent.width,
-				swapChainExtent.height,
-				1 //Layer count
-		};
-		if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &swapChainFramebuffers[i]) != vk::Result::eSuccess) {
-			throw std::runtime_error(FRAMEBUFFER_CREATE_FAIL_MSG);
-		}
-	}
-
+	std::transform(swapChainImageViews.begin(), swapChainImageViews.end(), std::back_inserter(swapChainFramebuffers),
+	               [&](const vk::ImageView &view) {
+		               std::array<vk::ImageView, 3> attachments{colorImageView, depthImageView, view};
+		               vk::FramebufferCreateInfo framebufferInfo({}, renderPass, attachments.size(), attachments.data(),
+		                                                         swapChainExtent.width, swapChainExtent.height, 1);
+		               return device.createFramebuffer(framebufferInfo);
+	               });
 }
 
 void TriangleApplication::createRenderPass() {
