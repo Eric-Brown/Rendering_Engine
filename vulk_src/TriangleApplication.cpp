@@ -982,11 +982,10 @@ void TriangleApplication::createRenderPass() {
 
 void TriangleApplication::createImageViews() {
 	swapChainImageViews.clear();
-	std::for_each(swapChainImages.begin(), swapChainImages.end(),
-	              [&](const vk::Image &image) {
-		              swapChainImageViews.push_back(
-				              createImageView(image, swapChainImageFormat, vk::ImageAspectFlagBits::eColor, 1));
-	              });
+	std::transform(swapChainImages.begin(), swapChainImages.end(), std::back_inserter(swapChainImageViews),
+	               [&](const vk::Image &image) -> vk::ImageView {
+		               return createImageView(image, swapChainImageFormat, vk::ImageAspectFlagBits::eColor, 1);
+	               });
 }
 
 void TriangleApplication::createSwapChain() {
