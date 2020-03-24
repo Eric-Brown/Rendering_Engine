@@ -859,8 +859,7 @@ void TriangleApplication::cleanupSwapChain() {
 }
 
 void TriangleApplication::cleanupPipelineResources() const {
-	vkFreeCommandBuffers(device, commandPool, static_cast<uint32_t>(commandBuffers.size()),
-	                     commandBuffers.data());
+	device.freeCommandBuffers(commandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
 	vkDestroyPipeline(device, graphicsPipeline, nullptr);
 	vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
 	vkDestroyRenderPass(device, renderPass, nullptr);
