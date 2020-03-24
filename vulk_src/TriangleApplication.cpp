@@ -1136,8 +1136,8 @@ TriangleApplication::chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormat
 bool TriangleApplication::isDeviceSuitable(vk::PhysicalDevice deviceToTest) {
 	vk::PhysicalDeviceProperties deviceProperties{};
 	vk::PhysicalDeviceFeatures deviceFeatures{};
-	vkGetPhysicalDeviceProperties(deviceToTest, &deviceProperties);
-	vkGetPhysicalDeviceFeatures(deviceToTest, &deviceFeatures);
+	deviceToTest.getProperties(&deviceProperties);
+	deviceToTest.getFeatures(&deviceFeatures);
 	// Only caring about having a geometry shader right now
 	QueueFamilyIndices queueIndices = findQueueFamilies(deviceToTest);
 	bool extensionsSupported = checkDeviceExtensionSupport(deviceToTest);
@@ -1153,7 +1153,7 @@ bool TriangleApplication::isDeviceSuitable(vk::PhysicalDevice deviceToTest) {
 bool TriangleApplication::checkDeviceExtensionSupport(vk::PhysicalDevice deviceToCheck) {
 	using namespace std;
 	vector<vk::ExtensionProperties> availableExtensions{};
-	deviceToCheck.enumerateDeviceExtensionProperties(nullptr,availableExtensions.get_allocator());
+	deviceToCheck.enumerateDeviceExtensionProperties(nullptr, availableExtensions.get_allocator());
 	set<string> requiredExtensions{requiredDeviceExtensions.begin(), requiredDeviceExtensions.end()};
 	for (const auto &extension : availableExtensions) {
 		requiredExtensions.erase(extension.extensionName);
