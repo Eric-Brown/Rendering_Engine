@@ -1122,11 +1122,12 @@ vk::SurfaceFormatKHR
 TriangleApplication::chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR> &availableFormats) {
 	using namespace std;
 	//surface has no preference...good
-	if (availableFormats.size() == 1 && availableFormats[0].format == VK_FORMAT_UNDEFINED) {
-		return {VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
+	if (availableFormats.size() == 1 && availableFormats[0].format == vk::Format::eUndefined) {
+		return {vk::Format::eB8G8R8A8Unorm, vk::ColorSpaceKHR::eExtendedSrgbNonlinearEXT};
 	}
 	auto found = find_if(availableFormats.begin(), availableFormats.end(), [&](const vk::SurfaceFormatKHR &val) {
-		return val.format == VK_FORMAT_B8G8R8A8_UNORM && val.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+		return val.format == vk::Format::eB8G8R8A8Unorm &&
+		       val.colorSpace == vk::ColorSpaceKHR::eExtendedSrgbNonlinearEXT;
 	});
 	if (found != availableFormats.end()) return *found;
 	// if we don't get what we want, then just go with first entry
