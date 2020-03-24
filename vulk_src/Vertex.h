@@ -14,9 +14,9 @@ struct Vertex {
 	glm::vec3 color;
 	glm::vec2 texCoord;
 
-	static VkVertexInputBindingDescription getBindingDescription();
+	static vk::VertexInputBindingDescription getBindingDescription();
 
-	static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions();
+	static std::array<vk::VertexInputAttributeDescription, 3> getAttributeDescriptions();
 
 	friend std::ostream &operator<<(std::ostream &os, const Vertex &vertex);
 };

@@ -5,7 +5,7 @@
 #ifndef DNDIDEA_COMMONINCLUDES_H
 #define DNDIDEA_COMMONINCLUDES_H
 
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
 #include <assimp/DefaultIOStream.h>
 #include <assimp/Importer.hpp>
 #include <assimp/DefaultLogger.hpp>

@@ -64,55 +64,55 @@ private:
 	static const int MAX_FRAMES_IN_FLIGHT = 2;
 	//Instance
 	GLFWwindow *window{};
-	VkInstance instance{};
-	VkSurfaceKHR surface{};
-	VkPhysicalDevice physicalDevice{};
-	VkDevice device{};
-	VkDebugUtilsMessengerEXT debugMessenger{};
-	VkSwapchainKHR swapChain{};
-	std::vector<VkImage> swapChainImages{};
-	VkFormat swapChainImageFormat{};
-	VkExtent2D swapChainExtent{};
-	std::vector<VkImageView> swapChainImageViews{};
-	VkRenderPass renderPass{};
-	VkDescriptorSetLayout descriptorSetLayout{};
-	VkPipelineLayout pipelineLayout{};
-	VkPipeline graphicsPipeline{};
-	VkQueue graphicsQueue{};
-	VkQueue presentQueue{};
-	std::vector<VkFramebuffer> swapChainFramebuffers{};
-	VkCommandPool commandPool{};
-	std::vector<VkCommandBuffer> commandBuffers{};
-	std::vector<VkSemaphore> imageAvailableSemaphores{};
-	std::vector<VkSemaphore> renderFinishedSemaphores{};
-	std::vector<VkFence> inFlightFences{};
+	vk::Instance instance{};
+	vk::SurfaceKHR surface{};
+	vk::PhysicalDevice physicalDevice{};
+	vk::Device device{};
+	vk::DebugUtilsMessengerEXT debugMessenger{};
+	vk::SwapchainKHR swapChain{};
+	std::vector<vk::Image> swapChainImages{};
+	vk::Format swapChainImageFormat{};
+	vk::Extent2D swapChainExtent{};
+	std::vector<vk::ImageView> swapChainImageViews{};
+	vk::RenderPass renderPass{};
+	vk::DescriptorSetLayout descriptorSetLayout{};
+	vk::PipelineLayout pipelineLayout{};
+	vk::Pipeline graphicsPipeline{};
+	vk::Queue graphicsQueue{};
+	vk::Queue presentQueue{};
+	std::vector<vk::Framebuffer> swapChainFramebuffers{};
+	vk::CommandPool commandPool{};
+	std::vector<vk::CommandBuffer> commandBuffers{};
+	std::vector<vk::Semaphore> imageAvailableSemaphores{};
+	std::vector<vk::Semaphore> renderFinishedSemaphores{};
+	std::vector<vk::Fence> inFlightFences{};
 	size_t currentFrame = 0;
 	bool framebufferResized{false};
 	std::vector<Vertex> vertices{};
 	std::vector<uint32_t> indices{};
-	VkBuffer vertexBuffer{};
-	VkDeviceMemory vertexBufferMemory{};
-	VkBuffer indexBuffer{};
-	VkDeviceMemory indexBufferMemory{};
+	vk::Buffer vertexBuffer{};
+	vk::DeviceMemory vertexBufferMemory{};
+	vk::Buffer indexBuffer{};
+	vk::DeviceMemory indexBufferMemory{};
 	uint32_t mipLevels{}; //for texture
-	VkImage textureImage{};
-	VkDeviceMemory textureImageMemory{};
-	VkImageView textureImageView{};
-	VkSampler textureSampler{};
-	VkImage depthImage{};
-	VkDeviceMemory depthImageMemory{};
-	VkImageView depthImageView{};
-	VkImage colorImage{};
-	VkDeviceMemory colorImageMemory{};
-	VkImageView colorImageView{};
-	VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
-	std::vector<VkBuffer> uniformBuffers{};
-	std::vector<VkDeviceMemory> uniformBuffersMemory{};
-	VkDescriptorPool descriptorPool{};
+	vk::Image textureImage{};
+	vk::DeviceMemory textureImageMemory{};
+	vk::ImageView textureImageView{};
+	vk::Sampler textureSampler{};
+	vk::Image depthImage{};
+	vk::DeviceMemory depthImageMemory{};
+	vk::ImageView depthImageView{};
+	vk::Image colorImage{};
+	vk::DeviceMemory colorImageMemory{};
+	vk::ImageView colorImageView{};
+	vk::SampleCountFlagBits msaaSamples = vk::SampleCountFlagBits::e1;
+	std::vector<vk::Buffer> uniformBuffers{};
+	std::vector<vk::DeviceMemory> uniformBuffersMemory{};
+	vk::DescriptorPool descriptorPool{};
 
 	// Done so that validation can be toggled in the future
 	//	static const bool enableValidationLayers = true;
-	std::vector<VkDescriptorSet> descriptorSets{};
+	std::vector<vk::DescriptorSet> descriptorSets{};
 public:
 	TriangleApplication();
 
@@ -134,9 +134,9 @@ private:
 	};
 
 	struct SwapChainSupportDetails {
-		VkSurfaceCapabilitiesKHR capabilities{};
-		std::vector<VkSurfaceFormatKHR> formats{};
-		std::vector<VkPresentModeKHR> presentModes{};
+		vk::SurfaceCapabilitiesKHR capabilities{};
+		std::vector<vk::SurfaceFormatKHR> formats{};
+		std::vector<vk::PresentModeKHR> presentModes{};
 	};
 
 	void initWindow();
@@ -179,30 +179,30 @@ private:
 
 	void createDescriptorSetLayout();
 
-	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+	QueueFamilyIndices findQueueFamilies(vk::PhysicalDevice device);
 
-	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+	uint32_t findMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties);
 
-	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
+	SwapChainSupportDetails querySwapChainSupport(vk::PhysicalDevice device);
 
-	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo) const;
+	void populateDebugMessengerCreateInfo(vk::DebugUtilsMessengerCreateInfoEXT &createInfo) const;
 
-	bool checkDeviceExtensionSupport(VkPhysicalDevice device);
+	bool checkDeviceExtensionSupport(vk::PhysicalDevice device);
 
-	bool isDeviceSuitable(VkPhysicalDevice device);
+	bool isDeviceSuitable(vk::PhysicalDevice device);
 
-	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats);
+	vk::SurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR> &availableFormats);
 
-	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes);
+	vk::PresentModeKHR chooseSwapPresentMode(const std::vector<vk::PresentModeKHR> &availablePresentModes);
 
-	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities);
+	vk::Extent2D chooseSwapExtent(const vk::SurfaceCapabilitiesKHR &capabilities);
 
-	size_t scoreDevice(VkPhysicalDevice device);
+	size_t scoreDevice(vk::PhysicalDevice device);
 
-	void createGraphicsPipelineFromDescriptions(VkVertexInputBindingDescription &bindingDescription,
-	                                            std::array<VkVertexInputAttributeDescription, 3> &attributeDescriptions);
+	void createGraphicsPipelineFromDescriptions(vk::VertexInputBindingDescription &bindingDescription,
+	                                            std::array<vk::VertexInputAttributeDescription, 3> &attributeDescriptions);
 
-	VkSampleCountFlagBits getMaxUsableSampleCount();
+	vk::SampleCountFlagBits getMaxUsableSampleCount();
 
 	void createFramebuffers();
 
@@ -216,15 +216,16 @@ private:
 
 	void createSyncObjects();
 
-	void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer,
-	                  VkDeviceMemory &bufferMemory);
+	void createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties,
+	                  vk::Buffer &buffer,
+	                  vk::DeviceMemory &bufferMemory);
 
-	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+	void copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size);
 
-	void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout,
+	void transitionImageLayout(vk::Image image, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout,
 	                           uint32_t mipLevels);
 
-	void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+	void copyBufferToImage(vk::Buffer buffer, vk::Image image, uint32_t width, uint32_t height);
 
 	void createVertexBuffer();
 
@@ -239,31 +240,35 @@ private:
 	void createColorResources();
 
 	void
-	createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples, VkFormat format,
-	            VkImageTiling tiling,
-	            VkImageUsageFlags usage,
-	            VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &imageMemory);
+	createImage(uint32_t width, uint32_t height, uint32_t mipLevels, vk::SampleCountFlagBits numSamples,
+	            vk::Format format,
+	            vk::ImageTiling tiling,
+	            vk::ImageUsageFlags usage,
+	            vk::MemoryPropertyFlags properties, vk::Image &image, vk::DeviceMemory &imageMemory);
 
-	VkCommandBuffer beginSingleTimeCommands();
+	vk::CommandBuffer beginSingleTimeCommands();
 
-	void endSingleTimeCommands(VkCommandBuffer commandBuffer);
+	void endSingleTimeCommands(vk::CommandBuffer commandBuffer);
 
 	void createTextureImage();
 
-	VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
+	vk::ImageView
+	createImageView(vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags, uint32_t mipLevels);
 
 	void createTextureImageView();
 
 	void createTextureSampler();
 
-	bool hasStencilComponent(VkFormat format);
+	bool hasStencilComponent(vk::Format format);
 
-	VkFormat findDepthFormat();
+	vk::Format findDepthFormat();
 
-	void generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
+	void
+	generateMipmaps(vk::Image image, vk::Format imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
 
-	VkFormat
-	findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+	vk::Format
+	findSupportedFormat(const std::vector<vk::Format> &candidates, vk::ImageTiling tiling,
+	                    vk::FormatFeatureFlags features);
 
 	void createDepthResources();
 
@@ -271,9 +276,9 @@ private:
 
 	void processSceneObject(const aiScene *scene);
 
-	VkApplicationInfo createApplicationInfo() const;
+	vk::ApplicationInfo createApplicationInfo() const;
 
-	VkInstanceCreateInfo createInstanceCreateInfo(VkApplicationInfo &appInfo);
+	vk::InstanceCreateInfo createInstanceCreateInfo(vk::ApplicationInfo &appInfo);
 
 	void validateExtensions(const std::vector<const char *> &toValidate) const;
 
@@ -281,10 +286,10 @@ private:
 
 	void validateLayerSupport();
 
-	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-	                                                    VkDebugUtilsMessageTypeFlagsEXT messageType,
-	                                                    const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
-	                                                    void *pUserData);
+	static VKAPI_ATTR vk::Bool32 VKAPI_CALL debugCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+	                                                      vk::DebugUtilsMessageTypeFlagsEXT messageType,
+	                                                      const vk::DebugUtilsMessengerCallbackDataEXT *pCallbackData,
+	                                                      void *pUserData);
 
 	void updateUniformBuffer(uint32_t currentImage);
 
@@ -294,7 +299,7 @@ private:
 
 	static std::vector<char> readFile(const std::string &filename);
 
-	VkShaderModule createShaderModule(const std::vector<char> &code);
+	vk::ShaderModule createShaderModule(const std::vector<char> &code);
 
 	void cleanupImageResources() const;
 
