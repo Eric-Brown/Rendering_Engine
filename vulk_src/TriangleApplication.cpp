@@ -1045,34 +1045,21 @@ void TriangleApplication::createLogicalDevice() {
 	std::set<uint32_t> uniqueQueueFamilies{queueIndices.graphicsFamily.value(), queueIndices.presentFamily.value()};
 	std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos{};
 	float queuePriority = 1.0f;
-	for (auto &family : uniqueQueueFamilies) {
-		vk::DeviceQueueCreateInfo info{};
-		info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-		info.queueFamilyIndex = family;
-		info.queueCount = 1;
-		info.pQueuePriorities = &queuePriority;
-		queueCreateInfos.push_back(info);
-	}
-	vk::DeviceCreateInfo createInfo = {};
-	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-	createInfo.pQueueCreateInfos = queueCreateInfos.data();
-	createInfo.queueCreateInfoCount = static_cast<uint32_t >(queueCreateInfos.size());
+	std::transform(uniqueQueueFamilies.begin(), uniqueQueueFamilies.end(), std::back_inserter(queueCreateInfos),
+	               [&](uint32_t family) -> vk::DeviceQueueCreateInfo { return {{}, family, 1, &queuePriority}; });
 	vk::PhysicalDeviceFeatures deviceFeatures = {};
 	deviceFeatures.samplerAnisotropy = VK_TRUE;
 	deviceFeatures.sampleRateShading = VK_TRUE; // enable sample shading feature for the device
-	createInfo.pEnabledFeatures = &deviceFeatures;
-	createInfo.enabledExtensionCount = static_cast<uint32_t >(requiredDeviceExtensions.size());
-	createInfo.ppEnabledExtensionNames = requiredDeviceExtensions.data();
-	// Can add check here to see if validation is enabled. Not really used, but good for legacy support
-	createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-	createInfo.ppEnabledLayerNames = validationLayers.data();
-	if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != vk::Result::eSuccess) {
+	vk::DeviceCreateInfo createInfo({}, static_cast<uint32_t>(queueCreateInfos.size()),
+	                                queueCreateInfos.data(), validationLayers.size(),
+	                                validationLayers.data(), requiredDeviceExtensions.size(),
+	                                requiredDeviceExtensions.data(), &deviceFeatures);
+	if (physicalDevice.createDevice(&createInfo, nullptr, &device) != vk::Result::eSuccess) {
 		throw std::runtime_error(LOGI_DEV_CREATE_FAIL_MSG);
 	}
 	// 0 is the Queue index. Since creating only one, it is zero.
-	vkGetDeviceQueue(device, queueIndices.graphicsFamily.value(), 0, &graphicsQueue);
-	vkGetDeviceQueue(device, queueIndices.presentFamily.value(), 0, &presentQueue);
-
+	device.getQueue(queueIndices.graphicsFamily.value(), 0, &graphicsQueue);
+	device.getQueue(queueIndices.presentFamily.value(), 0, &presentQueue);
 }
 
 size_t TriangleApplication::scoreDevice(vk::PhysicalDevice deviceToScore) {
