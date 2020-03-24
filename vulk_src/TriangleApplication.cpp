@@ -1078,10 +1078,10 @@ void TriangleApplication::createLogicalDevice() {
 size_t TriangleApplication::scoreDevice(vk::PhysicalDevice deviceToScore) {
 	vk::PhysicalDeviceProperties deviceProperties{};
 	vk::PhysicalDeviceFeatures deviceFeatures{};
-	vkGetPhysicalDeviceProperties(deviceToScore, &deviceProperties);
-	vkGetPhysicalDeviceFeatures(deviceToScore, &deviceFeatures);
+	deviceToScore.getProperties(&deviceProperties);
+	deviceToScore.getFeatures(&deviceFeatures);
 	size_t score{};
-	if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) score += 1000;
+	if (deviceProperties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu) score += 1000;
 	score += deviceProperties.limits.maxImageDimension2D;
 	// and so on...
 	return score;
