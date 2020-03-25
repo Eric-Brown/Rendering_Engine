@@ -46,6 +46,7 @@ static const char *const TEXTURE_FORMAT_NOT_SUPPORT_BLITTING_MSG = "Texture imag
 #include <glm/gtc/matrix_transform.hpp>
 #include <stb/stb_image.h>
 #include <algorithm>
+#include <vk_mem_alloc.h>
 #include <limits>
 #include <numeric>
 #include <set>
@@ -56,6 +57,9 @@ static const char *const TEXTURE_FORMAT_NOT_SUPPORT_BLITTING_MSG = "Texture imag
 #include <stdexcept>
 #include <chrono>
 
+// NOTE: This suggests some kind of singleton
+//VmaAllocator globalAllocator{};
+
 
 struct UniformBufferObject {
 	alignas(16) glm::mat4 model;
@@ -63,7 +67,7 @@ struct UniformBufferObject {
 	alignas(16) glm::mat4 proj;
 };
 
-class TriangleApplication {
+class Application {
 private:
 	//Constants
 	static inline constexpr std::array<const char *, 1> requiredDeviceExtensions{
@@ -126,7 +130,7 @@ private:
 	//	static const bool enableValidationLayers = true;
 	std::vector<vk::DescriptorSet> descriptorSets{};
 public:
-	TriangleApplication();
+	Application();
 
 	void run() {
 		initWindow();
@@ -178,6 +182,8 @@ private:
 		auto attributeDescriptions = Vertex::getAttributeDescriptions();
 		createGraphicsPipelineFromDescriptions(bindingDescription, attributeDescriptions);
 	}
+
+	void createGlobalVmaAllocator();
 
 	void initVulkanAfterPipeline();
 
