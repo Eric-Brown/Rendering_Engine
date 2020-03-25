@@ -33,20 +33,29 @@ static const char *const PIPELINE_CREATE_FAIL_MSG = "Failed to create graphics p
 
 static const char *const TEXTURE_FORMAT_NOT_SUPPORT_BLITTING_MSG = "Texture image format does not support linear blitting!";
 
-#include <vector>
+#include "Vertex.h"
+#include "Model.h"
+#define NOMINMAX
+#include <GLFW/glfw3.h>
+#include <optional>
+#include <assimp/DefaultIOStream.h>
+#include <assimp/Importer.hpp>
+#include <assimp/DefaultLogger.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+#include <glm/gtc/matrix_transform.hpp>
+#include <stb/stb_image.h>
 #include <algorithm>
-#include <iostream>
+#include <limits>
+#include <numeric>
 #include <set>
 #include <string>
 #include <iterator>
-#include <optional>
 #include <fstream>
 #include <array>
 #include <stdexcept>
 #include <chrono>
-#include "ExternalIncludes.h"
-#include "Vertex.h"
-#include "Model.h"
+
 
 struct UniformBufferObject {
 	alignas(16) glm::mat4 model;

@@ -6,8 +6,10 @@
 #define DNDIDEA_VERTEX_H
 
 #include <array>
+#include <iostream>
 #include <ostream>
-#include "ExternalIncludes.h"
+#include <glm/glm.hpp>
+#include <vulkan/vulkan.hpp>
 
 struct Vertex {
 	glm::vec3 pos;

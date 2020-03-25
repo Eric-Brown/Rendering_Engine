@@ -1,8 +1,6 @@
 //
 // Created by alexa on 2/11/2020.
 //
-#include <vulkan/vulkan.h>
-#include <iostream>
 #include "Vertex.h"
 
 vk::VertexInputBindingDescription Vertex::getBindingDescription() {

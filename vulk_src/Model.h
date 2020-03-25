@@ -5,8 +5,10 @@
 #ifndef DNDIDEA_MODEL_H
 #define DNDIDEA_MODEL_H
 
-#include "ExternalIncludes.h"
+
 #include "Vertex.h"
+#include <vector>
+#include <glm/glm.hpp>
 
 class Model {
 private:

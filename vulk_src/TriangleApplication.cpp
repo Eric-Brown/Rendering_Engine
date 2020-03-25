@@ -67,7 +67,11 @@ void TriangleApplication::setupDebugMessenger() {
 	//If no validation requested, just do nothing
 	vk::DebugUtilsMessengerCreateInfoEXT createInfo{};
 	populateDebugMessengerCreateInfo(createInfo);
-	debugMessenger = instance.createDebugUtilsMessengerEXT(createInfo);
+	vk::DynamicLoader dl;
+	auto vkGetInstanceProcAddr = dl.getProcAddress<PFN_vkGetInstanceProcAddr>(
+			"vkGetInstanceProcAddr");
+	vk::DispatchLoaderDynamic dispatchLoaderDynamic{instance, vkGetInstanceProcAddr};
+	debugMessenger = instance.createDebugUtilsMessengerEXT(createInfo, nullptr, dispatchLoaderDynamic);
 }
 
 void TriangleApplication::cleanup() {
@@ -89,7 +93,11 @@ void TriangleApplication::cleanup() {
 	vkDestroyCommandPool(device, commandPool, nullptr);
 	vkDestroyDevice(device, nullptr);
 	// Can add logic to test if we are debugging or not
-	instance.destroyDebugUtilsMessengerEXT(debugMessenger);
+	vk::DynamicLoader dl;
+	auto vkGetInstanceProcAddr = dl.getProcAddress<PFN_vkGetInstanceProcAddr>(
+			"vkGetInstanceProcAddr");
+	vk::DispatchLoaderDynamic dispatchLoaderDynamic{instance, vkGetInstanceProcAddr};
+	instance.destroyDebugUtilsMessengerEXT(debugMessenger, nullptr, dispatchLoaderDynamic);
 	vkDestroySurfaceKHR(instance, surface, nullptr);
 	vkDestroyInstance(instance, nullptr);
 	glfwDestroyWindow(window);
@@ -98,9 +106,9 @@ void TriangleApplication::cleanup() {
 
 void TriangleApplication::drawFrame() {
 	using namespace std;
-	device.waitForFences(1, &inFlightFences[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
+	device.waitForFences(1, &inFlightFences[currentFrame], VK_TRUE, (numeric_limits<uint64_t>::max)());
 	uint32_t imageIndex;
-	auto result = device.acquireNextImageKHR(swapChain, std::numeric_limits<uint64_t>::max(),
+	auto result = device.acquireNextImageKHR(swapChain, (numeric_limits<uint64_t>::max)(),
 	                                         imageAvailableSemaphores[currentFrame],
 	                                         nullptr, &imageIndex);
 	if (result == vk::Result::eErrorOutOfDateKHR) {
@@ -336,7 +344,7 @@ void TriangleApplication::createTextureImage() {
 	stbi_uc *pixels = stbi_load("../resources/textures/chalet.jpg", &texWidth, &texHeight,
 	                            &texChannels,
 	                            STBI_rgb_alpha);
-	mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
+	mipLevels = static_cast<uint32_t>(std::floor(std::log2((std::max)(texWidth, texHeight)))) + 1;
 	auto imageSize = static_cast<vk::DeviceSize>(static_cast<vk::DeviceSize>(texWidth) * texHeight * 4);
 	if (!pixels) {
 		throw std::runtime_error("failed to load texture image!");
@@ -706,7 +714,7 @@ void TriangleApplication::createSwapChain() {
 	uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
 	imageCount = std::clamp(imageCount,
 	                        swapChainSupport.capabilities.minImageCount,
-	                        std::max(imageCount, swapChainSupport.capabilities.maxImageCount));
+	                        (std::max)(imageCount, swapChainSupport.capabilities.maxImageCount));
 	vk::SwapchainCreateInfoKHR createInfo({}, surface, imageCount, surfaceFormat.format, surfaceFormat.colorSpace,
 	                                      extent, 1u, vk::ImageUsageFlagBits::eColorAttachment);
 	QueueFamilyIndices queueIndices = findQueueFamilies(physicalDevice);
@@ -773,7 +781,7 @@ size_t TriangleApplication::scoreDevice(vk::PhysicalDevice deviceToScore) {
 }
 
 vk::Extent2D TriangleApplication::chooseSwapExtent(const vk::SurfaceCapabilitiesKHR &capabilities) {
-	if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
+	if (capabilities.currentExtent.width != (std::numeric_limits<uint32_t>::max)()) {
 		return capabilities.currentExtent;
 	} else {
 		int width, height;
