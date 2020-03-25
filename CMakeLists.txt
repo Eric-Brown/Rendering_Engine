@@ -37,6 +37,12 @@ find_package(glm REQUIRED)
 hunter_add_package(Assimp)
 find_package(Assimp CONFIG REQUIRED)
 
+if (MSVC)
+    set(CMAKE_CXX_FLAGS "/wd4099 /experimental:external /external:anglebrackets /external:W0 /W4 /WX /EHsc")
+else ()
+    set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-Wall -Wextra -pedantic -Werror")
+endif ()
+
 #add_subdirectory(src)
 add_subdirectory(vulk_src)
 #add_subdirectory(DND_Lib)
