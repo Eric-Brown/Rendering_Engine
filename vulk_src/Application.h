@@ -51,6 +51,7 @@ static const char *const TEXTURE_FORMAT_NOT_SUPPORT_BLITTING_MSG = "Texture imag
 #include <numeric>
 #include <set>
 #include <string>
+#include <tuple>
 #include <iterator>
 #include <fstream>
 #include <array>
@@ -104,9 +105,9 @@ private:
 	std::vector<Vertex> vertices{};
 	std::vector<uint32_t> indices{};
 	vk::Buffer vertexBuffer{};
-	vk::DeviceMemory vertexBufferMemory{};
+	VmaAllocation vertexBufferAllocation{};
 	vk::Buffer indexBuffer{};
-	vk::DeviceMemory indexBufferMemory{};
+	VmaAllocation indexBufferAllocation{};
 	uint32_t mipLevels{}; //for texture
 	vk::Image textureImage{};
 	vk::DeviceMemory textureImageMemory{};
@@ -120,7 +121,7 @@ private:
 	vk::ImageView colorImageView{};
 	vk::SampleCountFlagBits msaaSamples = vk::SampleCountFlagBits::e1;
 	std::vector<vk::Buffer> uniformBuffers{};
-	std::vector<vk::DeviceMemory> uniformBuffersMemory{};
+	std::vector<VmaAllocation> uniformBuffersAllocations{};
 	vk::DescriptorPool descriptorPool{};
 	// Done so that validation can be toggled in the future
 	//	static const bool enableValidationLayers = true;
@@ -201,6 +202,10 @@ private:
 
 	void createDescriptorSetLayout();
 
+	template <typename T>
+	std::tuple<vk::Buffer, VmaAllocation> createBufferTypeFromVector(std::vector<T> thing,
+	                                                                    vk::BufferUsageFlags bufferType);
+
 	QueueFamilyIndices findQueueFamilies(vk::PhysicalDevice device);
 
 	uint32_t findMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties);
@@ -227,6 +232,7 @@ private:
 	vk::SampleCountFlagBits getMaxUsableSampleCount();
 
 	void createFramebuffers();
+	void destroyGlobalAllocator();
 
 	void createCommandPool();
 
@@ -238,9 +244,9 @@ private:
 
 	void createSyncObjects();
 
-	void createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties,
+	void createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage,
 	                  vk::Buffer &buffer,
-	                  vk::DeviceMemory &bufferMemory);
+	                  VmaAllocation &bufferAllocation);
 
 	void copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size);
 
