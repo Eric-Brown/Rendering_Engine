@@ -36,6 +36,8 @@ hunter_add_package(glm)
 find_package(glm REQUIRED)
 hunter_add_package(Assimp)
 find_package(Assimp CONFIG REQUIRED)
+hunter_add_package(VulkanMemoryAllocator)
+find_package(VulkanMemoryAllocator REQUIRED)
 
 if (MSVC)
     set(CMAKE_CXX_FLAGS "/wd4099 /experimental:external /external:anglebrackets /external:W0 /W4 /WX /EHsc")

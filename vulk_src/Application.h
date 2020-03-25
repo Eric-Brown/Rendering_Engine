@@ -63,7 +63,7 @@ struct UniformBufferObject {
 	alignas(16) glm::mat4 proj;
 };
 
-class TriangleApplication {
+class Application {
 private:
 	//Constants
 	static inline constexpr std::array<const char *, 1> requiredDeviceExtensions{
@@ -126,7 +126,7 @@ private:
 	//	static const bool enableValidationLayers = true;
 	std::vector<vk::DescriptorSet> descriptorSets{};
 public:
-	TriangleApplication();
+	Application();
 
 	void run() {
 		initWindow();

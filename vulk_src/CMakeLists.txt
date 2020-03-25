@@ -6,11 +6,11 @@ project(Vulk_Main)
 #endif ()
 
 add_executable(${PROJECT_NAME} main.cpp
-        TriangleApplication.cpp
-        TriangleApplication.h
+        Application.cpp
+        Application.h
         Vertex.h Vertex.cpp
         Model.cpp Model.h)
-target_link_libraries(${PROJECT_NAME} PRIVATE glfw glm Vulkan::Vulkan Assimp::assimp)
+target_link_libraries(${PROJECT_NAME} PRIVATE glfw glm Vulkan::Vulkan Assimp::assimp VulkanMemoryAllocator::VulkanMemoryAllocator)
 if (MSVC)
 #    target_compile_options(${PROJECT_NAME} PUBLIC )
 else ()
