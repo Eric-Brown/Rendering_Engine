@@ -240,8 +240,7 @@ std::vector<const char *> TriangleApplication::getRequiredExtensions() const {
 void TriangleApplication::validateExtensions(const std::vector<const char *> &toValidate) const {
 	using namespace std;
 	// Get all supported extensions
-	vector<vk::ExtensionProperties> extensions{};
-	vk::enumerateInstanceExtensionProperties({""}, extensions.get_allocator(), {});
+	vector<vk::ExtensionProperties> extensions{vk::enumerateInstanceExtensionProperties()};
 	for (auto name : toValidate) {
 		string toFind{name};
 		auto found = find_if(extensions.begin(), extensions.end(), [&](const vk::ExtensionProperties &props) {
@@ -585,30 +584,27 @@ void TriangleApplication::createCommandBuffers() {
 	if (device.allocateCommandBuffers(&allocInfo, commandBuffers.data()) != vk::Result::eSuccess) {
 		throw runtime_error("failed to allocate command buffers!");
 	}
-	vector<tuple<vk::CommandBuffer &, vk::Framebuffer &>> bufferViews{};
 	for (auto i{0}; i < swapChainFramebuffers.size(); i++) {
-		bufferViews.push_back(tie(commandBuffers[i], swapChainFramebuffers[i]));
-	}
-	for (auto&[buffer, framebuffer] : bufferViews) {
 		vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
-		buffer.begin(beginInfo);
+		commandBuffers[i].begin(beginInfo);
 		vk::Rect2D renderArea{vk::Offset2D(0, 0), swapChainExtent};
 		array<float, 4> clearColor{0.0f, 0.0f, 0.0f, 1.0f};
 		vk::ClearDepthStencilValue depthStencilValue{1.0f, 0};
 		array<vk::ClearValue, 2> clearValues{vk::ClearColorValue(clearColor), depthStencilValue};
-		vk::RenderPassBeginInfo renderPassInfo(renderPass, framebuffer, renderArea,
+		vk::RenderPassBeginInfo renderPassInfo(renderPass, swapChainFramebuffers[i], renderArea,
 		                                       static_cast<uint32_t >(clearValues.size()), clearValues.data());
-		buffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
-		buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, graphicsPipeline);
+		commandBuffers[i].beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
+		commandBuffers[i].bindPipeline(vk::PipelineBindPoint::eGraphics, graphicsPipeline);
 		vk::Buffer vertexBuffers[] = {vertexBuffer};
 		vk::DeviceSize offsets[] = {0};
-		buffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
-		buffer.bindIndexBuffer(indexBuffer, offsets[0], vk::IndexType::eUint32);
-		buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout, 0, 1, descriptorSets.data(), 0,
-		                          nullptr);
-		buffer.drawIndexed(static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
-		buffer.endRenderPass();
-		buffer.end();
+		commandBuffers[i].bindVertexBuffers(0, 1, vertexBuffers, offsets);
+		commandBuffers[i].bindIndexBuffer(indexBuffer, offsets[0], vk::IndexType::eUint32);
+		commandBuffers[i].bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout, 0, 1,
+		                                     descriptorSets.data(), 0,
+		                                     nullptr);
+		commandBuffers[i].drawIndexed(static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+		commandBuffers[i].endRenderPass();
+		commandBuffers[i].end();
 	}
 }
 
@@ -655,7 +651,7 @@ void TriangleApplication::createCommandPool() {
 }
 
 void TriangleApplication::createFramebuffers() {
-	swapChainFramebuffers.resize(swapChainImageViews.size());
+	swapChainFramebuffers.clear();
 	std::transform(swapChainImageViews.begin(), swapChainImageViews.end(), std::back_inserter(swapChainFramebuffers),
 	               [&](const vk::ImageView &view) {
 		               std::array<vk::ImageView, 3> attachments{colorImageView, depthImageView, view};
