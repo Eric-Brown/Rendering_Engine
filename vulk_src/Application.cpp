@@ -82,8 +82,7 @@ void Application::cleanup() {
 	cleanupSwapChain();
 	vkDestroySampler(device, textureSampler, nullptr);
 	vkDestroyImageView(device, textureImageView, nullptr);
-	vkDestroyImage(device, textureImage, nullptr);
-	vkFreeMemory(device, textureImageMemory, nullptr);
+	vmaDestroyImage(globalAllocator,textureImage,textureImageMemory);
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
 	vmaDestroyBuffer(globalAllocator, indexBuffer, indexBufferAllocation);
 	vmaDestroyBuffer(globalAllocator, vertexBuffer, vertexBufferAllocation);
@@ -289,7 +288,7 @@ void Application::createInstance() {
 void Application::createDepthResources() {
 	vk::Format depthFormat = findDepthFormat();
 	createImage(swapChainExtent.width, swapChainExtent.height, 1, msaaSamples, depthFormat, vk::ImageTiling::eOptimal,
-	            vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, depthImage,
+	            vk::ImageUsageFlagBits::eDepthStencilAttachment, VMA_MEMORY_USAGE_GPU_ONLY, depthImage,
 	            depthImageMemory);
 	depthImageView = createImageView(depthImage, depthFormat, vk::ImageAspectFlagBits::eDepth, 1);
 	transitionImageLayout(depthImage, depthFormat, vk::ImageLayout::eUndefined,
@@ -367,7 +366,7 @@ void Application::createTextureImage() {
 	            vk::ImageTiling::eOptimal,
 	            vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst |
 	            vk::ImageUsageFlagBits::eSampled,
-	            vk::MemoryPropertyFlagBits::eDeviceLocal, textureImage, textureImageMemory);
+	            VMA_MEMORY_USAGE_GPU_ONLY, textureImage, textureImageMemory);
 
 	transitionImageLayout(textureImage, vk::Format::eR8G8B8A8Unorm, vk::ImageLayout::eUndefined,
 	                      vk::ImageLayout::eTransferDstOptimal, mipLevels);
@@ -398,15 +397,16 @@ Application::createImage(uint32_t width, uint32_t height, uint32_t imageMipLevel
                          vk::SampleCountFlagBits numSamples,
                          vk::Format format,
                          vk::ImageTiling tiling,
-                         vk::ImageUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Image &image,
-                         vk::DeviceMemory &imageMemory) {
+                         vk::ImageUsageFlags usage, VmaMemoryUsage memUsage, vk::Image &image,
+                         VmaAllocation &imageMemory) {
 	vk::ImageCreateInfo imageInfo{{}, vk::ImageType::e2D, format, vk::Extent3D{width, height, 1}, imageMipLevels, 1,
 	                              numSamples, tiling, usage, vk::SharingMode::eExclusive, {}, {}, {}};
-	image = device.createImage(imageInfo);
-	vk::MemoryRequirements memRequirements{device.getImageMemoryRequirements(image)};
-	vk::MemoryAllocateInfo allocInfo{memRequirements.size, findMemoryType(memRequirements.memoryTypeBits, properties)};
-	imageMemory = device.allocateMemory(allocInfo);
-	device.bindImageMemory(image, imageMemory, 0);
+	auto vkCImageInfo = static_cast<VkImageCreateInfo>(imageInfo);
+	VmaAllocationCreateInfo allocationCreateInfo{};
+	allocationCreateInfo.usage = memUsage;
+	VkImage temp;
+	vmaCreateImage(globalAllocator, &vkCImageInfo, &allocationCreateInfo, &temp, &imageMemory, nullptr);
+	image = temp;
 }
 
 void Application::createDescriptorSets() {
@@ -613,11 +613,9 @@ void Application::cleanupPipelineResources() const {
 
 void Application::cleanupImageResources() const {
 	vkDestroyImageView(device, colorImageView, nullptr);
-	vkDestroyImage(device, colorImage, nullptr);
-	vkFreeMemory(device, colorImageMemory, nullptr);
+	vmaDestroyImage(globalAllocator, colorImage, colorImageMemory);
 	vkDestroyImageView(device, depthImageView, nullptr);
-	vkDestroyImage(device, depthImage, nullptr);
-	vkFreeMemory(device, depthImageMemory, nullptr);
+	vmaDestroyImage(globalAllocator, depthImage, depthImageMemory);
 }
 
 void Application::createCommandPool() {
@@ -1129,7 +1127,7 @@ void Application::createColorResources() {
 
 	createImage(swapChainExtent.width, swapChainExtent.height, 1, msaaSamples, colorFormat, vk::ImageTiling::eOptimal,
 	            vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment,
-	            vk::MemoryPropertyFlagBits::eDeviceLocal, colorImage, colorImageMemory);
+	            VMA_MEMORY_USAGE_GPU_ONLY, colorImage, colorImageMemory);
 	colorImageView = createImageView(colorImage, colorFormat, vk::ImageAspectFlagBits::eColor, 1);
 }
 

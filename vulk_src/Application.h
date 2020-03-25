@@ -110,14 +110,14 @@ private:
 	VmaAllocation indexBufferAllocation{};
 	uint32_t mipLevels{}; //for texture
 	vk::Image textureImage{};
-	vk::DeviceMemory textureImageMemory{};
+	VmaAllocation textureImageMemory{};
 	vk::ImageView textureImageView{};
 	vk::Sampler textureSampler{};
 	vk::Image depthImage{};
-	vk::DeviceMemory depthImageMemory{};
+	VmaAllocation depthImageMemory{};
 	vk::ImageView depthImageView{};
 	vk::Image colorImage{};
-	vk::DeviceMemory colorImageMemory{};
+	VmaAllocation colorImageMemory{};
 	vk::ImageView colorImageView{};
 	vk::SampleCountFlagBits msaaSamples = vk::SampleCountFlagBits::e1;
 	std::vector<vk::Buffer> uniformBuffers{};
@@ -268,11 +268,11 @@ private:
 	void createColorResources();
 
 	void
-	createImage(uint32_t width, uint32_t height, uint32_t mipLevels, vk::SampleCountFlagBits numSamples,
+	createImage(uint32_t width, uint32_t height, uint32_t imageMipLevels, vk::SampleCountFlagBits numSamples,
 	            vk::Format format,
 	            vk::ImageTiling tiling,
 	            vk::ImageUsageFlags usage,
-	            vk::MemoryPropertyFlags properties, vk::Image &image, vk::DeviceMemory &imageMemory);
+	            VmaMemoryUsage memUsage, vk::Image &image, VmaAllocation &imageMemory);
 
 	vk::CommandBuffer beginSingleTimeCommands();
 
