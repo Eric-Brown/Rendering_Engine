@@ -82,7 +82,7 @@ void Application::cleanup() {
 	cleanupSwapChain();
 	vkDestroySampler(device, textureSampler, nullptr);
 	vkDestroyImageView(device, textureImageView, nullptr);
-	vmaDestroyImage(globalAllocator,textureImage,textureImageMemory);
+	vmaDestroyImage(globalAllocator, textureImage, textureImageMemory);
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
 	vmaDestroyBuffer(globalAllocator, indexBuffer, indexBufferAllocation);
 	vmaDestroyBuffer(globalAllocator, vertexBuffer, vertexBufferAllocation);
@@ -350,15 +350,7 @@ void Application::createTextureImage() {
 	if (!pixels) {
 		throw std::runtime_error("failed to load texture image!");
 	}
-	vk::Buffer stagingBuffer;
-	VmaAllocation stagingBufferMemory;
-	createBuffer(imageSize, vk::BufferUsageFlagBits::eTransferSrc,
-	             VMA_MEMORY_USAGE_CPU_TO_GPU, stagingBuffer,
-	             stagingBufferMemory);
-	void *data;
-	vmaMapMemory(globalAllocator, stagingBufferMemory, &data);
-	memcpy(data, pixels, static_cast<size_t>(imageSize));
-	vmaUnmapMemory(globalAllocator, stagingBufferMemory);
+	auto[stagingBuffer, stagingBufferMemory] = initializeStagingBuffer(pixels, imageSize);
 	stbi_image_free(pixels);
 	createImage(static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight), mipLevels,
 	            vk::SampleCountFlagBits::e1,
@@ -1148,14 +1140,7 @@ template<typename T>
 std::tuple<vk::Buffer, VmaAllocation> Application::createBufferTypeFromVector(std::vector<T> thing,
                                                                               vk::BufferUsageFlags bufferType) {
 	vk::DeviceSize bufferSize = sizeof(T) * thing.size();
-	vk::Buffer stagingBuffer;
-	VmaAllocation stagingBufferAllocation;
-	createBuffer(bufferSize, vk::BufferUsageFlagBits::eTransferSrc, VMA_MEMORY_USAGE_CPU_TO_GPU, stagingBuffer,
-	             stagingBufferAllocation);
-	void *data;
-	vmaMapMemory(globalAllocator, stagingBufferAllocation, &data);
-	memcpy(data, thing.data(), bufferSize);
-	vmaUnmapMemory(globalAllocator, stagingBufferAllocation);
+	auto[stagingBuffer, stagingBufferAllocation] = initializeStagingBuffer(thing.data(), bufferSize);
 	vk::Buffer bufferToReturn;
 	VmaAllocation allocationToReturn;
 	createBuffer(bufferSize, vk::BufferUsageFlagBits::eTransferDst | bufferType, VMA_MEMORY_USAGE_GPU_ONLY,
@@ -1167,4 +1152,16 @@ std::tuple<vk::Buffer, VmaAllocation> Application::createBufferTypeFromVector(st
 
 void Application::destroyGlobalAllocator() {
 	vmaDestroyAllocator(globalAllocator);
+}
+
+std::tuple<vk::Buffer, VmaAllocation> Application::initializeStagingBuffer(void *data, size_t dataSize) {
+	vk::Buffer stagingBuffer;
+	VmaAllocation stagingBufferAllocation;
+	createBuffer(dataSize, vk::BufferUsageFlagBits::eTransferSrc, VMA_MEMORY_USAGE_CPU_ONLY, stagingBuffer,
+	             stagingBufferAllocation);
+	void *temp_data{};
+	vmaMapMemory(globalAllocator, stagingBufferAllocation, &temp_data);
+	memcpy(temp_data, data, dataSize);
+	vmaUnmapMemory(globalAllocator, stagingBufferAllocation);
+	return std::make_tuple(stagingBuffer, stagingBufferAllocation);
 }

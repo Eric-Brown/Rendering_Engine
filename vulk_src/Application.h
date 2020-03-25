@@ -332,6 +332,8 @@ private:
 
 	void cleanupImageResources() const;
 
+	std::tuple<vk::Buffer, VmaAllocation> initializeStagingBuffer(void *data, vk::DeviceSize dataSize);
+
 	void cleanupPipelineResources() const;
 };
 
