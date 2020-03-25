@@ -1,10 +1,17 @@
 cmake_minimum_required(VERSION 3.10)
-
 set(CMAKE_CXX_STANDARD 17)
-#set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "/ignore:4099")
-add_executable(vulk_main main.cpp
-        TriangleApplication.cpp
-        TriangleApplication.h
-        CommonIncludes.h Vertex.h Vertex.cpp)
+project(Vulk_Main)
 
-target_link_libraries(vulk_main PRIVATE glfw glm Vulkan::Vulkan Assimp::assimp)
+add_executable(${PROJECT_NAME} main.cpp
+        Application.cpp
+        Application.h
+        Vertex.h Vertex.cpp
+        Model.cpp Model.h)
+target_link_libraries(${PROJECT_NAME} PRIVATE glfw glm Vulkan::Vulkan Assimp::assimp VulkanMemoryAllocator::VulkanMemoryAllocator)
+if (MSVC)
+#    See PROJECT_ROOT CMakeLists.txt comment for why this is commented out.
+#    target_compile_options(${PROJECT_NAME} PUBLIC )
+else ()
+    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -pedantic -Werror -pedantic-errors)
+endif ()
+

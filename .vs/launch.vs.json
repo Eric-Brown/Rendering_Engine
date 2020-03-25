@@ -1,6 +1,4 @@
 {
-  "version": "0.2.1",
-  "defaults": {},
   "configurations": [
     {
       "type": "default",
@@ -8,6 +6,15 @@
       "projectTarget": "vulk_main.exe (vulk_src\\vulk_main.exe)",
       "name": "vulk_main.exe (vulk_src\\vulk_main.exe)",
       "currentDir": "C:\\Users\\alexa\\Documents\\Programming_Files\\CPP Projects\\DnDIdea\\vulk_src"
+    },
+    {
+      "type": "default",
+      "project": "CMakeLists.txt",
+      "projectTarget": "Vulk_Main.exe (vulk_src\\Vulk_Main.exe)",
+      "name": "Vulk_Main.exe (vulk_src\\Vulk_Main.exe)",
+      "currentDir": "C:\\Users\\alexa\\Documents\\Programming_Files\\CPP Projects\\DnDIdea\\vulk_src"
     }
-  ]
+  ],
+  "defaults": {},
+  "version": "0.2.1"
 }
