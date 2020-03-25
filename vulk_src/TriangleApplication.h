@@ -1,3 +1,7 @@
+#include <utility>
+
+#include <utility>
+
 //
 // Created by alexa on 5/18/2019.
 //
@@ -136,6 +140,14 @@ private:
 		vk::SurfaceCapabilitiesKHR capabilities{};
 		std::vector<vk::SurfaceFormatKHR> formats{};
 		std::vector<vk::PresentModeKHR> presentModes{};
+
+		SwapChainSupportDetails(vk::SurfaceCapabilitiesKHR capabilitiesKHR,
+		                        std::vector<vk::SurfaceFormatKHR> surfaceFormats,
+		                        std::vector<vk::PresentModeKHR> presentModesKHR)
+				: capabilities{std::move(capabilitiesKHR)},
+				  formats{std::move(surfaceFormats)},
+				  presentModes{std::move(presentModesKHR)} {
+		}
 	};
 
 	void initWindow();
@@ -289,6 +301,7 @@ private:
 	                                                      VkDebugUtilsMessageTypeFlagsEXT messageType,
 	                                                      const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
 	                                                      void *pUserData);
+
 	void updateUniformBuffer(uint32_t currentImage);
 
 	void drawFrame();

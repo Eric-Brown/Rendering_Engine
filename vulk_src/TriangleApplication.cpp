@@ -63,24 +63,11 @@ bool TriangleApplication::readModelFile(const std::string &pFile) {
 	return true;
 }
 
-vk::Result CreateDebugUtilsMessengerEXT(vk::Instance instance, const vk::DebugUtilsMessengerCreateInfoEXT *pCreateInfo,
-                                        const vk::AllocationCallbacks *pAllocator,
-                                        vk::DebugUtilsMessengerEXT *pDebugMessenger) {
-	return instance.createDebugUtilsMessengerEXT(pCreateInfo, pAllocator, pDebugMessenger);
-}
-
-void DestroyDebugUtilsMessengerEXT(vk::Instance instance, vk::DebugUtilsMessengerEXT debugMessenger,
-                                   const vk::AllocationCallbacks *pAllocator) {
-	instance.destroyDebugUtilsMessengerEXT(debugMessenger, pAllocator);
-}
-
 void TriangleApplication::setupDebugMessenger() {
 	//If no validation requested, just do nothing
 	vk::DebugUtilsMessengerCreateInfoEXT createInfo{};
 	populateDebugMessengerCreateInfo(createInfo);
-	if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) != vk::Result::eSuccess) {
-		throw std::runtime_error("failed to set up debug messenger!");
-	}
+	debugMessenger = instance.createDebugUtilsMessengerEXT(createInfo);
 }
 
 void TriangleApplication::cleanup() {
@@ -102,7 +89,7 @@ void TriangleApplication::cleanup() {
 	vkDestroyCommandPool(device, commandPool, nullptr);
 	vkDestroyDevice(device, nullptr);
 	// Can add logic to test if we are debugging or not
-	DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+	instance.destroyDebugUtilsMessengerEXT(debugMessenger);
 	vkDestroySurfaceKHR(instance, surface, nullptr);
 	vkDestroyInstance(instance, nullptr);
 	glfwDestroyWindow(window);
@@ -220,17 +207,11 @@ vk::Bool32 TriangleApplication::debugCallback(VkDebugUtilsMessageSeverityFlagBit
 
 void TriangleApplication::validateLayerSupport() {
 	using namespace std;
-	uint32_t layerCount{};
-	vk::enumerateInstanceLayerProperties(&layerCount, nullptr);
-	vector<vk::LayerProperties> availableLayers(layerCount);
-	vk::enumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+	auto layerProperties = vk::enumerateInstanceLayerProperties();
 	for (auto layerName: validationLayers) {
-		string toFind{layerName};
-		auto found = find_if(availableLayers.begin(), availableLayers.end(), [&](const vk::LayerProperties &props) {
-			string currName{props.layerName};
-			return currName == toFind;
-		});
-		if (found == availableLayers.end()) {
+		if (std::find_if(layerProperties.begin(), layerProperties.end(), [&](const vk::LayerProperties &props) {
+			return strcmp(layerName, props.layerName) == 0;
+		}) == layerProperties.end()) {
 			throw runtime_error("Requested validation layer does not exist.");
 		}
 	}
@@ -266,7 +247,8 @@ void TriangleApplication::validateExtensions(const std::vector<const char *> &to
 }
 
 vk::InstanceCreateInfo TriangleApplication::createInstanceCreateInfo(vk::ApplicationInfo &appInfo) {
-	vk::InstanceCreateInfo info({}, &appInfo, validationLayers.size(), validationLayers.data(), {}, {});
+	vk::InstanceCreateInfo info({}, &appInfo, static_cast<uint32_t >(validationLayers.size()), validationLayers.data(),
+	                            {}, {});
 	return info;
 }
 
@@ -422,7 +404,7 @@ void TriangleApplication::createDescriptorSets() {
 	std::vector<vk::DescriptorSetLayout> layouts(swapChainImages.size(), descriptorSetLayout);
 	vk::DescriptorSetAllocateInfo allocInfo{descriptorPool, static_cast<uint32_t>(swapChainImages.size()),
 	                                        layouts.data()};
-	device.allocateDescriptorSets(allocInfo, descriptorSets.get_allocator());
+	descriptorSets = device.allocateDescriptorSets(allocInfo);
 	for (size_t i = 0; i < swapChainImages.size(); i++) {
 		vk::DescriptorBufferInfo bufferInfo{uniformBuffers[i], 0, sizeof(UniformBufferObject)};
 		vk::DescriptorImageInfo imageInfo{textureSampler, textureImageView, vk::ImageLayout::eShaderReadOnlyOptimal};
@@ -431,7 +413,8 @@ void TriangleApplication::createDescriptorSets() {
 				vk::WriteDescriptorSet{descriptorSets[i], 1, 0, 1, vk::DescriptorType::eCombinedImageSampler,
 				                       &imageInfo}
 		};
-		device.updateDescriptorSets(descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+		device.updateDescriptorSets(static_cast<uint32_t >(descriptorWrites.size()), descriptorWrites.data(), 0,
+		                            nullptr);
 	}
 }
 
@@ -462,7 +445,7 @@ void TriangleApplication::createDescriptorSetLayout() {
 	vk::DescriptorSetLayoutBinding samplerLayoutBinding{1, vk::DescriptorType::eCombinedImageSampler, 1,
 	                                                    vk::ShaderStageFlagBits::eFragment, nullptr};
 	std::array<vk::DescriptorSetLayoutBinding, 2> bindings = {uboLayoutBinding, samplerLayoutBinding};
-	vk::DescriptorSetLayoutCreateInfo layoutInfo{{}, bindings.size(), bindings.data()};
+	vk::DescriptorSetLayoutCreateInfo layoutInfo{{}, static_cast<uint32_t >(bindings.size()), bindings.data()};
 	descriptorSetLayout = device.createDescriptorSetLayout(layoutInfo);
 }
 
@@ -605,8 +588,8 @@ void TriangleApplication::createCommandBuffers() {
 		array<float, 4> clearColor{0.0f, 0.0f, 0.0f, 1.0f};
 		vk::ClearDepthStencilValue depthStencilValue{1.0f, 0};
 		array<vk::ClearValue, 2> clearValues{vk::ClearColorValue(clearColor), depthStencilValue};
-		vk::RenderPassBeginInfo renderPassInfo(renderPass, framebuffer, renderArea, clearValues.size(),
-		                                       clearValues.data());
+		vk::RenderPassBeginInfo renderPassInfo(renderPass, framebuffer, renderArea,
+		                                       static_cast<uint32_t >(clearValues.size()), clearValues.data());
 		buffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
 		buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, graphicsPipeline);
 		vk::Buffer vertexBuffers[] = {vertexBuffer};
@@ -668,7 +651,9 @@ void TriangleApplication::createFramebuffers() {
 	std::transform(swapChainImageViews.begin(), swapChainImageViews.end(), std::back_inserter(swapChainFramebuffers),
 	               [&](const vk::ImageView &view) {
 		               std::array<vk::ImageView, 3> attachments{colorImageView, depthImageView, view};
-		               vk::FramebufferCreateInfo framebufferInfo({}, renderPass, attachments.size(), attachments.data(),
+		               vk::FramebufferCreateInfo framebufferInfo({}, renderPass,
+		                                                         static_cast<uint32_t >(attachments.size()),
+		                                                         attachments.data(),
 		                                                         swapChainExtent.width, swapChainExtent.height, 1);
 		               return device.createFramebuffer(framebufferInfo);
 	               });
@@ -697,7 +682,8 @@ void TriangleApplication::createRenderPass() {
 	                                 vk::PipelineStageFlagBits::eColorAttachmentOutput, {},
 	                                 vk::AccessFlagBits::eColorAttachmentRead |
 	                                 vk::AccessFlagBits::eColorAttachmentWrite);
-	vk::RenderPassCreateInfo renderPassInfo({}, attachments.size(), attachments.data(), 1, &subpass, 1, &dependency);
+	vk::RenderPassCreateInfo renderPassInfo({}, static_cast<uint32_t >(attachments.size()), attachments.data(), 1,
+	                                        &subpass, 1, &dependency);
 	if (device.createRenderPass(&renderPassInfo, nullptr, &renderPass) != vk::Result::eSuccess) {
 		throw std::runtime_error(RENDER_PASS_CREATE_FAIL_MSG);
 	}
@@ -737,7 +723,7 @@ void TriangleApplication::createSwapChain() {
 	if (device.createSwapchainKHR(&createInfo, nullptr, &swapChain) != vk::Result::eSuccess) {
 		throw std::runtime_error(SWAP_CHAIN_CREATE_FAIL_MSG);
 	}
-	device.getSwapchainImagesKHR(swapChain, swapChainImages.get_allocator());
+	swapChainImages = device.getSwapchainImagesKHR(swapChain);
 	swapChainImageFormat = surfaceFormat.format;
 	swapChainExtent = extent;
 }
@@ -763,8 +749,8 @@ void TriangleApplication::createLogicalDevice() {
 	deviceFeatures.samplerAnisotropy = VK_TRUE;
 	deviceFeatures.sampleRateShading = VK_TRUE; // enable sample shading feature for the device
 	vk::DeviceCreateInfo createInfo({}, static_cast<uint32_t>(queueCreateInfos.size()),
-	                                queueCreateInfos.data(), validationLayers.size(),
-	                                validationLayers.data(), requiredDeviceExtensions.size(),
+	                                queueCreateInfos.data(), static_cast<uint32_t >(validationLayers.size()),
+	                                validationLayers.data(), static_cast<uint32_t >(requiredDeviceExtensions.size()),
 	                                requiredDeviceExtensions.data(), &deviceFeatures);
 	if (physicalDevice.createDevice(&createInfo, nullptr, &device) != vk::Result::eSuccess) {
 		throw std::runtime_error(LOGI_DEV_CREATE_FAIL_MSG);
@@ -852,8 +838,7 @@ bool TriangleApplication::isDeviceSuitable(vk::PhysicalDevice deviceToTest) {
 
 bool TriangleApplication::checkDeviceExtensionSupport(vk::PhysicalDevice deviceToCheck) {
 	using namespace std;
-	vector<vk::ExtensionProperties> availableExtensions{};
-	deviceToCheck.enumerateDeviceExtensionProperties(nullptr, availableExtensions.get_allocator());
+	vector<vk::ExtensionProperties> availableExtensions{deviceToCheck.enumerateDeviceExtensionProperties()};
 	set<string> requiredExtensions{requiredDeviceExtensions.begin(), requiredDeviceExtensions.end()};
 	for (const auto &extension : availableExtensions) {
 		requiredExtensions.erase(extension.extensionName);
@@ -863,8 +848,7 @@ bool TriangleApplication::checkDeviceExtensionSupport(vk::PhysicalDevice deviceT
 
 void TriangleApplication::pickPhysicalDevice() {
 	using namespace std;
-	vector<vk::PhysicalDevice> devices{};
-	instance.enumeratePhysicalDevices(devices.get_allocator());
+	vector<vk::PhysicalDevice> devices{instance.enumeratePhysicalDevices()};
 	if (devices.empty()) throw runtime_error(NO_VULK_DEV_AVAILABLE_MSG);
 	devices.erase(find_if(devices.begin(), devices.end(),
 	                      [&](vk::PhysicalDevice &dev) { return !isDeviceSuitable(dev); }), devices.end());
@@ -883,21 +867,14 @@ void TriangleApplication::populateDebugMessengerCreateInfo(vk::DebugUtilsMesseng
 	                                          vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
 	                                          vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
 	                                          vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance, debugCallback, {});
-
 	createInfo = info;
 }
 
 TriangleApplication::SwapChainSupportDetails
 TriangleApplication::querySwapChainSupport(vk::PhysicalDevice deviceToQuery) {
-	SwapChainSupportDetails details;
-	deviceToQuery.getSurfaceCapabilitiesKHR(surface, &details.capabilities);
-	deviceToQuery.getSurfaceFormatsKHR(surface, details.formats.get_allocator());
-	uint32_t presentModeCount;
-	vkGetPhysicalDeviceSurfacePresentModesKHR(deviceToQuery, surface, &presentModeCount, nullptr);
-	if (presentModeCount != 0) {
-		details.presentModes.resize(presentModeCount);
-		deviceToQuery.getSurfacePresentModesKHR(surface, &presentModeCount, details.presentModes.data());
-	}
+	SwapChainSupportDetails details{deviceToQuery.getSurfaceCapabilitiesKHR(surface),
+	                                deviceToQuery.getSurfaceFormatsKHR(surface),
+	                                deviceToQuery.getSurfacePresentModesKHR(surface)};
 	return details;
 }
 
@@ -1002,10 +979,12 @@ void TriangleApplication::createGraphicsPipelineFromDescriptions(vk::VertexInput
 	vk::PipelineShaderStageCreateInfo fragShaderStageInfo({}, vk::ShaderStageFlagBits::eFragment, fraMod, "main", {});
 	vk::PipelineShaderStageCreateInfo stages[] = {vertShaderStageInfo, fragShaderStageInfo};
 	vk::VertexInputBindingDescription &bindingDescription1 = bindingDescription;
-	vk::PipelineVertexInputStateCreateInfo vertexInputInfo({}, 1, &bindingDescription1, attributeDescriptions.size(),
+	vk::PipelineVertexInputStateCreateInfo vertexInputInfo({}, 1, &bindingDescription1,
+	                                                       static_cast<uint32_t >( attributeDescriptions.size()),
 	                                                       attributeDescriptions.data());
 	vk::PipelineInputAssemblyStateCreateInfo inputAssembly({}, vk::PrimitiveTopology::eTriangleList, VK_FALSE);
-	vk::Viewport viewport(0.0f, 0.0f, swapChainExtent.width, swapChainExtent.height, 0.0f, 1.0f);
+	vk::Viewport viewport(0.0f, 0.0f, static_cast<float >( swapChainExtent.width),
+	                      static_cast<float >( swapChainExtent.height), 0.0f, 1.0f);
 	vk::Rect2D scissor(vk::Offset2D{0, 0}, swapChainExtent);
 	vk::PipelineViewportStateCreateInfo viewportState({}, 1, &viewport, 1, &scissor);
 	vk::PipelineRasterizationStateCreateInfo rasterizer({}, VK_FALSE, VK_FALSE, vk::PolygonMode::eFill,
