@@ -46,6 +46,7 @@ static const char *const TEXTURE_FORMAT_NOT_SUPPORT_BLITTING_MSG = "Texture imag
 #include <glm/gtc/matrix_transform.hpp>
 #include <stb/stb_image.h>
 #include <algorithm>
+#include <vk_mem_alloc.h>
 #include <limits>
 #include <numeric>
 #include <set>
@@ -55,6 +56,9 @@ static const char *const TEXTURE_FORMAT_NOT_SUPPORT_BLITTING_MSG = "Texture imag
 #include <array>
 #include <stdexcept>
 #include <chrono>
+
+// NOTE: This suggests some kind of singleton
+//VmaAllocator globalAllocator{};
 
 
 struct UniformBufferObject {
@@ -178,6 +182,8 @@ private:
 		auto attributeDescriptions = Vertex::getAttributeDescriptions();
 		createGraphicsPipelineFromDescriptions(bindingDescription, attributeDescriptions);
 	}
+
+	void createGlobalVmaAllocator();
 
 	void initVulkanAfterPipeline();
 

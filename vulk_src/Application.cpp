@@ -946,6 +946,7 @@ void Application::initVulkanBeforePipeline() {
 	createSurface();
 	pickPhysicalDevice();
 	createLogicalDevice();
+	createGlobalVmaAllocator();
 	createSwapChain();
 	createImageViews();
 	createRenderPass();
@@ -1168,4 +1169,8 @@ Application::Application()
 		  indices{
 				  0, 1, 2, 2, 3, 0,
 				  4, 5, 6, 6, 7, 4} {
+}
+
+void Application::createGlobalVmaAllocator() {
+
 }

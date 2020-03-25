@@ -21,11 +21,6 @@ HunterGate(
 
 project(DnDIdea)
 
-#set(HUNTER_PACKAGES glfw Assimp glm stb)
-#include(FetchContent)
-#FetchContent_Declare(SetupHunter GIT_REPOSITORY https://github.com/cpp-pm/gate)
-#FetchContent_MakeAvailable(SetupHunter)
-
 find_package(OpenGL REQUIRED)
 find_package(Vulkan REQUIRED)
 hunter_add_package(glfw)
@@ -40,6 +35,8 @@ hunter_add_package(VulkanMemoryAllocator)
 find_package(VulkanMemoryAllocator REQUIRED)
 
 if (MSVC)
+#    CMAKE_CXX_FLAGS is intentionally overridden here as there have been problems with compiler flags when using
+#    the previous compiler flags.
     set(CMAKE_CXX_FLAGS "/wd4099 /experimental:external /external:anglebrackets /external:W0 /W4 /WX /EHsc")
 else ()
     set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-Wall -Wextra -pedantic -Werror")
