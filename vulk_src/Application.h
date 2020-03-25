@@ -35,7 +35,9 @@ static const char *const TEXTURE_FORMAT_NOT_SUPPORT_BLITTING_MSG = "Texture imag
 
 #include "Vertex.h"
 #include "Model.h"
+
 #define NOMINMAX
+
 #include <GLFW/glfw3.h>
 #include <optional>
 #include <assimp/DefaultIOStream.h>
@@ -202,13 +204,11 @@ private:
 
 	void createDescriptorSetLayout();
 
-	template <typename T>
+	template<typename T>
 	std::tuple<vk::Buffer, VmaAllocation> createBufferTypeFromVector(std::vector<T> thing,
-	                                                                    vk::BufferUsageFlags bufferType);
+	                                                                 vk::BufferUsageFlags bufferType);
 
 	QueueFamilyIndices findQueueFamilies(vk::PhysicalDevice device);
-
-	uint32_t findMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties);
 
 	SwapChainSupportDetails querySwapChainSupport(vk::PhysicalDevice device);
 
@@ -232,6 +232,7 @@ private:
 	vk::SampleCountFlagBits getMaxUsableSampleCount();
 
 	void createFramebuffers();
+
 	void destroyGlobalAllocator();
 
 	void createCommandPool();

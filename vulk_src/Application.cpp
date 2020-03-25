@@ -858,17 +858,6 @@ Application::querySwapChainSupport(vk::PhysicalDevice deviceToQuery) {
 	return details;
 }
 
-uint32_t Application::findMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties) {
-	vk::PhysicalDeviceMemoryProperties memProperties;
-	physicalDevice.getMemoryProperties(&memProperties);
-	for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-		if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
-			return i;
-		}
-	}
-	throw std::runtime_error(NO_SUITABLE_MEMORY_MSG);
-}
-
 Application::QueueFamilyIndices Application::findQueueFamilies(vk::PhysicalDevice deviceToSearch) {
 	QueueFamilyIndices queueIndices;
 	uint32_t queueFamilyCount = 0;
