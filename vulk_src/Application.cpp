@@ -4,6 +4,10 @@
 
 #include "Application.h"
 
+// NOTE: This suggests some kind of singleton
+// Created here to avoid linker errors. Singleton would probably eliminate this problem.
+VmaAllocator globalAllocator;
+
 bool Application::readModelFile(const std::string &pFile) {
 	// Create an instance of the Importer class
 	Assimp::Importer importer;
@@ -946,7 +950,7 @@ void Application::initVulkanBeforePipeline() {
 	createSurface();
 	pickPhysicalDevice();
 	createLogicalDevice();
-	createGlobalVmaAllocator();
+	initGlobalVmaAllocator();
 	createSwapChain();
 	createImageViews();
 	createRenderPass();
@@ -1171,6 +1175,10 @@ Application::Application()
 				  4, 5, 6, 6, 7, 4} {
 }
 
-void Application::createGlobalVmaAllocator() {
+void Application::initGlobalVmaAllocator() {
+	VmaAllocatorCreateInfo allocatorCreateInfo{};
+	allocatorCreateInfo.physicalDevice = physicalDevice;
+	allocatorCreateInfo.device= device;
 
+	vmaCreateAllocator(&allocatorCreateInfo, &globalAllocator);
 }

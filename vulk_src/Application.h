@@ -57,10 +57,6 @@ static const char *const TEXTURE_FORMAT_NOT_SUPPORT_BLITTING_MSG = "Texture imag
 #include <stdexcept>
 #include <chrono>
 
-// NOTE: This suggests some kind of singleton
-//VmaAllocator globalAllocator{};
-
-
 struct UniformBufferObject {
 	alignas(16) glm::mat4 model;
 	alignas(16) glm::mat4 view;
@@ -183,7 +179,7 @@ private:
 		createGraphicsPipelineFromDescriptions(bindingDescription, attributeDescriptions);
 	}
 
-	void createGlobalVmaAllocator();
+	void initGlobalVmaAllocator();
 
 	void initVulkanAfterPipeline();
 
