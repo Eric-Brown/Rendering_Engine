@@ -4,10 +4,6 @@
 
 #include "Application.h"
 
-// NOTE: This suggests some kind of singleton
-// Created here to avoid linker errors. Singleton would probably eliminate this problem.
-VmaAllocator globalAllocator;
-
 bool Application::readModelFile(const std::string &pFile) {
 	// Create an instance of the Importer class
 	Assimp::Importer importer;
@@ -393,12 +389,11 @@ Application::createImage(uint32_t width, uint32_t height, uint32_t imageMipLevel
                          VmaAllocation &imageMemory) {
 	vk::ImageCreateInfo imageInfo{{}, vk::ImageType::e2D, format, vk::Extent3D{width, height, 1}, imageMipLevels, 1,
 	                              numSamples, tiling, usage, vk::SharingMode::eExclusive, {}, {}, {}};
-	auto vkCImageInfo = static_cast<VkImageCreateInfo>(imageInfo);
 	VmaAllocationCreateInfo allocationCreateInfo{};
 	allocationCreateInfo.usage = memUsage;
-	VkImage temp;
-	vmaCreateImage(globalAllocator, &vkCImageInfo, &allocationCreateInfo, &temp, &imageMemory, nullptr);
-	image = temp;
+	auto[retImg, imgAlloc] = VulkanMemoryManager::getInstance()->createImage(imageInfo, allocationCreateInfo);
+	image = retImg;
+	imageMemory = imgAlloc;
 }
 
 void Application::createDescriptorSets() {
@@ -434,8 +429,9 @@ void Application::createUniformBuffers() {
 	uniformBuffers.resize(swapChainImages.size());
 	uniformBuffersAllocations.resize(swapChainImages.size());
 	for (size_t i = 0; i < swapChainImages.size(); i++) {
-		createBuffer(bufferSize, vk::BufferUsageFlagBits::eUniformBuffer, VMA_MEMORY_USAGE_CPU_ONLY,
-		             uniformBuffers[i], uniformBuffersAllocations[i]);
+		VulkanMemoryManager::getInstance()
+				->createBuffer(bufferSize, vk::BufferUsageFlagBits::eUniformBuffer, VMA_MEMORY_USAGE_CPU_ONLY,
+				               uniformBuffers[i], uniformBuffersAllocations[i]);
 	}
 }
 
@@ -452,7 +448,8 @@ void Application::createDescriptorSetLayout() {
 
 void Application::createIndexBuffer() {
 	std::cout << "index count when creating buffer: " << indices.size() << std::endl;
-	auto[buffer, allocation] = createBufferTypeFromVector(indices, vk::BufferUsageFlagBits::eIndexBuffer);
+	auto[buffer, allocation] =VulkanMemoryManager::getInstance()
+			->createBufferTypeFromVector(indices, vk::BufferUsageFlagBits::eIndexBuffer);
 	indexBuffer = buffer;
 	indexBufferAllocation = allocation;
 }
@@ -460,7 +457,8 @@ void Application::createIndexBuffer() {
 void Application::createVertexBuffer() {
 	std::cout << "I have " << vertices.size() << " vertices" << std::endl;
 	std::cout << "Total stride: " << sizeof(Vertex) << std::endl;
-	auto[buffer, allocation] = createBufferTypeFromVector(vertices, vk::BufferUsageFlagBits::eVertexBuffer);
+	auto[buffer, allocation] = VulkanMemoryManager::getInstance()
+			->createBufferTypeFromVector(vertices, vk::BufferUsageFlagBits::eVertexBuffer);
 	vertexBuffer = buffer;
 	vertexBufferAllocation = allocation;
 }
@@ -513,25 +511,6 @@ void Application::transitionImageLayout(vk::Image image, vk::Format format, vk::
 	}
 	commandBuffer.pipelineBarrier(sourceStage, destinationStage, {}, 0, nullptr, 0, nullptr, 1, &barrier);
 	endSingleTimeCommands(commandBuffer);
-}
-
-void Application::copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size) {
-	vk::CommandBuffer commandBuffer = beginSingleTimeCommands();
-	vk::BufferCopy copyRegion({}, {}, size);
-	commandBuffer.copyBuffer(srcBuffer, dstBuffer, 1, &copyRegion);
-	endSingleTimeCommands(commandBuffer);
-}
-
-void
-Application::createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage,
-                          vk::Buffer &buffer, VmaAllocation &bufferAllocation) {
-	vk::BufferCreateInfo bufferInfo({}, size, usage, vk::SharingMode::eExclusive);
-	auto vkCBufferInfo = static_cast<VkBufferCreateInfo>(bufferInfo);
-	VmaAllocationCreateInfo allocationCreateInfo{};
-	allocationCreateInfo.usage = memoryUsage;
-	VkBuffer vkCBuffer;
-	vmaCreateBuffer(globalAllocator, &vkCBufferInfo, &allocationCreateInfo, &vkCBuffer, &bufferAllocation, nullptr);
-	buffer = vkCBuffer;
 }
 
 void Application::createSyncObjects() {
@@ -590,9 +569,8 @@ void Application::cleanupSwapChain() {
 	}
 	vkDestroySwapchainKHR(device, swapChain, nullptr);
 	for (size_t i = 0; i < swapChainImages.size(); i++) {
-		vmaDestroyBuffer(globalAllocator, uniformBuffers[i], uniformBuffersAllocations[i]);
+		VulkanMemoryManager::getInstance()->DestroyBuffer(uniformBuffers[i], uniformBuffersAllocations[i]);
 	}
-
 	vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 }
 
@@ -605,9 +583,9 @@ void Application::cleanupPipelineResources() const {
 
 void Application::cleanupImageResources() const {
 	vkDestroyImageView(device, colorImageView, nullptr);
-	vmaDestroyImage(globalAllocator, colorImage, colorImageMemory);
+	VulkanMemoryManager::getInstance()->DestroyImage(colorImage, colorImageMemory);
 	vkDestroyImageView(device, depthImageView, nullptr);
-	vmaDestroyImage(globalAllocator, depthImage, depthImageMemory);
+	VulkanMemoryManager::getInstance()->DestroyImage(depthImage, depthImageMemory);
 }
 
 void Application::createCommandPool() {
@@ -737,7 +715,8 @@ size_t Application::scoreDevice(vk::PhysicalDevice deviceToScore) {
 	vk::PhysicalDeviceFeatures deviceFeatures{};
 	deviceToScore.getProperties(&deviceProperties);
 	deviceToScore.getFeatures(&deviceFeatures);
-	size_t score{};
+	size_t
+	score{};
 	if (deviceProperties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu) score += 1000;
 	score += deviceProperties.limits.maxImageDimension2D;
 	// and so on...
@@ -926,7 +905,6 @@ void Application::initVulkanAfterPipeline() {
 	createDescriptorSets();
 	createCommandBuffers();
 	createSyncObjects();
-
 }
 
 void Application::createGraphicsPipelineFromDescriptions(vk::VertexInputBindingDescription &bindingDescription,
@@ -1031,8 +1009,6 @@ void Application::processSceneObject(const aiScene *scene) {
 		}
 	}
 	cout << "There are now: " << indices.size() << " number of indices" << endl;
-
-
 }
 
 void Application::generateMipmaps(vk::Image image, vk::Format imageFormat, int32_t texWidth, int32_t texHeight,
@@ -1044,7 +1020,6 @@ void Application::generateMipmaps(vk::Image image, vk::Format imageFormat, int32
 		throw std::runtime_error(TEXTURE_FORMAT_NOT_SUPPORT_BLITTING_MSG);
 	}
 	vk::CommandBuffer commandBuffer = beginSingleTimeCommands();
-
 	vk::ImageMemoryBarrier barrier({}, {}, {}, {}, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, image,
 	                               {vk::ImageAspectFlagBits::eColor, {}, 1, 0, 1});
 	int32_t mipWidth = texWidth;
@@ -1091,21 +1066,17 @@ vk::SampleCountFlagBits Application::getMaxUsableSampleCount() {
 	physicalDevice.getProperties(&physicalDeviceProperties);
 	vk::SampleCountFlags counts = physicalDeviceProperties.limits.framebufferColorSampleCounts &
 	                              physicalDeviceProperties.limits.framebufferDepthSampleCounts;
-
 	if (counts & vk::SampleCountFlagBits::e64) { return vk::SampleCountFlagBits::e64; }
 	if (counts & vk::SampleCountFlagBits::e32) { return vk::SampleCountFlagBits::e32; }
 	if (counts & vk::SampleCountFlagBits::e16) { return vk::SampleCountFlagBits::e16; }
 	if (counts & vk::SampleCountFlagBits::e8) { return vk::SampleCountFlagBits::e8; }
 	if (counts & vk::SampleCountFlagBits::e4) { return vk::SampleCountFlagBits::e4; }
 	if (counts & vk::SampleCountFlagBits::e2) { return vk::SampleCountFlagBits::e2; }
-
 	return vk::SampleCountFlagBits::e1;
 }
 
 void Application::createColorResources() {
-
 	vk::Format colorFormat = swapChainImageFormat;
-
 	createImage(swapChainExtent.width, swapChainExtent.height, 1, msaaSamples, colorFormat, vk::ImageTiling::eOptimal,
 	            vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment,
 	            VMA_MEMORY_USAGE_GPU_ONLY, colorImage, colorImageMemory);
@@ -1129,39 +1100,11 @@ Application::Application()
 }
 
 void Application::initGlobalVmaAllocator() {
-	VmaAllocatorCreateInfo allocatorCreateInfo{};
-	allocatorCreateInfo.physicalDevice = physicalDevice;
-	allocatorCreateInfo.device = device;
-
-	vmaCreateAllocator(&allocatorCreateInfo, &globalAllocator);
-}
-
-template<typename T>
-std::tuple<vk::Buffer, VmaAllocation> Application::createBufferTypeFromVector(std::vector<T> thing,
-                                                                              vk::BufferUsageFlags bufferType) {
-	vk::DeviceSize bufferSize = sizeof(T) * thing.size();
-	auto[stagingBuffer, stagingBufferAllocation] = initializeStagingBuffer(thing.data(), bufferSize);
-	vk::Buffer bufferToReturn;
-	VmaAllocation allocationToReturn;
-	createBuffer(bufferSize, vk::BufferUsageFlagBits::eTransferDst | bufferType, VMA_MEMORY_USAGE_GPU_ONLY,
-	             bufferToReturn, allocationToReturn);
-	copyBuffer(stagingBuffer, bufferToReturn, bufferSize);
-	vmaDestroyBuffer(globalAllocator, stagingBuffer, stagingBufferAllocation);
-	return std::make_tuple(bufferToReturn, allocationToReturn);
+	VulkanMemoryManager::Init(device, physicalDevice);
 }
 
 void Application::destroyGlobalAllocator() {
-	vmaDestroyAllocator(globalAllocator);
+	VulkanMemoryManager::Destroy();
 }
 
-std::tuple<vk::Buffer, VmaAllocation> Application::initializeStagingBuffer(void *data, size_t dataSize) {
-	vk::Buffer stagingBuffer;
-	VmaAllocation stagingBufferAllocation;
-	createBuffer(dataSize, vk::BufferUsageFlagBits::eTransferSrc, VMA_MEMORY_USAGE_CPU_ONLY, stagingBuffer,
-	             stagingBufferAllocation);
-	void *temp_data{};
-	vmaMapMemory(globalAllocator, stagingBufferAllocation, &temp_data);
-	memcpy(temp_data, data, dataSize);
-	vmaUnmapMemory(globalAllocator, stagingBufferAllocation);
-	return std::make_tuple(stagingBuffer, stagingBufferAllocation);
-}
+

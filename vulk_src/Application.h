@@ -33,6 +33,7 @@ static const char *const PIPELINE_CREATE_FAIL_MSG = "Failed to create graphics p
 
 static const char *const TEXTURE_FORMAT_NOT_SUPPORT_BLITTING_MSG = "Texture image format does not support linear blitting!";
 
+#include "VulkanMemoryManager.h"
 #include "Vertex.h"
 #include "Model.h"
 
@@ -204,10 +205,6 @@ private:
 
 	void createDescriptorSetLayout();
 
-	template<typename T>
-	std::tuple<vk::Buffer, VmaAllocation> createBufferTypeFromVector(std::vector<T> thing,
-	                                                                 vk::BufferUsageFlags bufferType);
-
 	QueueFamilyIndices findQueueFamilies(vk::PhysicalDevice device);
 
 	SwapChainSupportDetails querySwapChainSupport(vk::PhysicalDevice device);
@@ -245,11 +242,7 @@ private:
 
 	void createSyncObjects();
 
-	void createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage,
-	                  vk::Buffer &buffer,
-	                  VmaAllocation &bufferAllocation);
 
-	void copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size);
 
 	void transitionImageLayout(vk::Image image, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout,
 	                           uint32_t mipLevels);
