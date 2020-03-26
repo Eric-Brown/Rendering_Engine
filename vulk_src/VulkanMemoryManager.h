@@ -24,6 +24,8 @@ public:
 	void createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage,
 	                  vk::Buffer &buffer, VmaAllocation &bufferAllocation);
 
+	void CopyDataToAllocation(void* toCopy, vk::DeviceSize copySize, VmaAllocation allocation);
+
 	std::tuple<vk::Image, VmaAllocation> createImage(VkImageCreateInfo imageInfo, VmaAllocationCreateInfo allocationCreateInfo);
 
 	template<typename T>

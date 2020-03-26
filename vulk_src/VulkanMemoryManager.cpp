@@ -80,6 +80,13 @@ VulkanMemoryManager::createImage(VkImageCreateInfo imageInfo, VmaAllocationCreat
 	return std::tuple<vk::Image, VmaAllocation>(temp, alloc);
 }
 
+void VulkanMemoryManager::CopyDataToAllocation(void *toCopy, vk::DeviceSize copySize, VmaAllocation allocation) {
+	void *data;
+	vmaMapMemory(allocator, allocation, &data);
+	memcpy(data, toCopy, copySize);
+	vmaUnmapMemory(allocator, allocation);
+}
+
 //void VulkanMemoryManager::copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size) {
 //	vk::CommandBuffer commandBuffer = beginSingleTimeCommands();
 //	vk::BufferCopy copyRegion({}, {}, size);
