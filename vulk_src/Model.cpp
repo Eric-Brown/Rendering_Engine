@@ -16,67 +16,23 @@ const std::vector<uint32_t> &Model::GetIndices() { return meshIndexes; }
 const glm::mat4 &Model::GetModelTransform() { return model_transform; }
 
 bool Model::readModelFile(const std::string &pFile) {
-  // Create an instance of the Importer class
   Assimp::Importer importer;
-
   importer.SetPropertyBool("GLOB_MEASURE_TIME", true);
   Assimp::DefaultLogger::create("", Assimp::Logger::VERBOSE,
                                 aiDefaultLogStream_STDOUT);
   std::cout << "Reading file now...\n" << std::endl;
-  // And have it read the given file with some example postprocessing
-  // Usually - if speed is not the most important aspect for you - you'll
-  // probably to request more postprocessing than we do in this example.
   const aiScene *scene = importer.ReadFile(
-      pFile,
-      aiProcess_ValidateDataStructure | // Validates imported structure
-          //	                                         aiProcess_MakeLeftHanded
-          //| 	                                         	                                         aiProcess_FlipWindingOrder |
-          //                                             aiProcess_PreTransformVertices
-          //                                             |
-          aiProcess_RemoveRedundantMaterials | // Removes duplicated materials
-          //	                                         aiProcess_FindInstances
-          //| 	                                         aiProcess_RemoveComponent |
-          aiProcess_FindDegenerates |
-          //	                                         aiProcess_GenUVCoords |
-          aiProcess_Triangulate | aiProcess_FlipUVs |
-          //                                             aiProcess_FindInvalidData
-          //                                             |
-          //                                             aiProcess_FixInfacingNormals
-          //                                             |
-          //                                             aiProcess_SplitLargeMeshes
-          //                                             | aiProcess_SortByPType
-          //                                             |
-          //???
-          //	                                         aiProcess_GenNormals |
-          //	                                         aiProcess_CalcTangentSpace
-          //| 	                                         aiProcess_OptimizeMeshes |
-          //                                                                                          aiProcess_JoinIdenticalVertices |
-          //	                                         aiProcess_LimitBoneWeights
-          //| 	                                         aiProcess_ImproveCacheLocality |
-          //                                             aiProcess_CalcTangentSpace
-          //                                             |
-
-          aiProcess_JoinIdenticalVertices |
-          //	                                         aiProcess_SplitLargeMeshes
-          //| 	                                                                                      aiProcess_SortByPType |
-          //                                             aiProcess_FlipUVs |
-          //                                             aiProcess_FlipWindingOrder
-          //                                             |
-          0);
-
-  // If the import failed, report it
+      pFile, aiProcess_ValidateDataStructure |
+                 aiProcess_RemoveRedundantMaterials |
+                 aiProcess_FindDegenerates | aiProcess_Triangulate |
+                 aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices);
   if (!scene) {
     std::cerr << "Could not read file" << std::endl;
-    //		DoTheErrorLogging( importer.GetErrorString());
     return false;
   }
   Assimp::DefaultLogger::kill();
   std::cout << "Processing Geometry now...\n" << std::endl;
-
-  // Now we can access the file's contents.
   processSceneObject(scene);
-
-  // We're done. Everything will be cleaned up by the importer destructor
   return true;
 }
 
