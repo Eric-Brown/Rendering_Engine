@@ -7,7 +7,7 @@
 
 
 #include <vk_mem_alloc.h>
-#include "Vertex.h"
+#include <tuple>
 
 class VulkanMemoryManager {
 public:
@@ -21,12 +21,15 @@ public:
 
 	void DestroyBuffer(vk::Buffer buff, VmaAllocation buffAllocation);
 
+	std::tuple<vk::Buffer, VmaAllocation> initializeStagingBuffer(void *data, size_t dataSize);
+
 	void createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage,
 	                  vk::Buffer &buffer, VmaAllocation &bufferAllocation);
 
-	void CopyDataToAllocation(void* toCopy, vk::DeviceSize copySize, VmaAllocation allocation);
+	void CopyDataToAllocation(void *toCopy, vk::DeviceSize copySize, VmaAllocation allocation);
 
-	std::tuple<vk::Image, VmaAllocation> createImage(VkImageCreateInfo imageInfo, VmaAllocationCreateInfo allocationCreateInfo);
+	std::tuple<vk::Image, VmaAllocation>
+	createImage(VkImageCreateInfo imageInfo, VmaAllocationCreateInfo allocationCreateInfo);
 
 	template<typename T>
 	std::tuple<vk::Buffer, VmaAllocation> createBufferTypeFromVector(std::vector<T> thing,
@@ -39,7 +42,7 @@ private:
 	VmaAllocator allocator;
 
 //	void copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size);
-	std::tuple<vk::Buffer, VmaAllocation> initializeStagingBuffer(void *data, size_t dataSize);
+
 };
 
 

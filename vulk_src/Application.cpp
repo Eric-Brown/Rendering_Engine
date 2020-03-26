@@ -343,7 +343,8 @@ void Application::createTextureImage() {
 	if (!pixels) {
 		throw std::runtime_error("failed to load texture image!");
 	}
-	auto[stagingBuffer, stagingBufferMemory] = initializeStagingBuffer(pixels, imageSize);
+	auto[stagingBuffer, stagingBufferMemory] =VulkanMemoryManager::getInstance()
+			->initializeStagingBuffer(pixels, imageSize);
 	stbi_image_free(pixels);
 	createImage(static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight), mipLevels,
 	            vk::SampleCountFlagBits::e1,
