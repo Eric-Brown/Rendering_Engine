@@ -9,8 +9,6 @@ if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
 endif ()
 # Set value to suppress the CMake warnings that vcpkg will emit while in VS2019
 set(VCPKG_SUPPRESS_INSTALLED_LIBRARIES_WARNING TRUE)
-#set(_NO_DEBUG_HEAP 1)
-#set(_ITERATOR_DEBUG_LEVEL 0)
 
 # Import in HunterGate file for using Hunter
 include("cmake/HunterGate.cmake")
@@ -21,16 +19,23 @@ HunterGate(
 
 project(DnDIdea)
 
+# Many of the packages require knowledge about OpenGL and Vulkan, so they are found first
 find_package(OpenGL REQUIRED)
 find_package(Vulkan REQUIRED)
+
+# glfw used for windowing
 hunter_add_package(glfw)
 find_package(glfw3 REQUIRED)
+# stb used for image loading
 hunter_add_package(stb)
 find_package(stb REQUIRED)
+# glm used for vector and matrix operations
 hunter_add_package(glm)
 find_package(glm REQUIRED)
+# assimp used for model loading
 hunter_add_package(Assimp)
 find_package(Assimp CONFIG REQUIRED)
+# VMA used for GPU memory management
 hunter_add_package(VulkanMemoryAllocator)
 find_package(VulkanMemoryAllocator REQUIRED)
 
@@ -42,4 +47,5 @@ else ()
     set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-Wall -Wextra -pedantic -Werror")
 endif ()
 
+# actual project is subdirectory for organization purposes
 add_subdirectory(vulk_src)

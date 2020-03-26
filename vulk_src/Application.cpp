@@ -4,65 +4,6 @@
 
 #include "Application.h"
 
-bool Application::readModelFile(const std::string &pFile) {
-	// Create an instance of the Importer class
-	Assimp::Importer importer;
-
-	importer.SetPropertyBool("GLOB_MEASURE_TIME", true);
-	Assimp::DefaultLogger::create("", Assimp::Logger::VERBOSE, aiDefaultLogStream_STDOUT);
-	std::cout << "Reading file now...\n" << std::endl;
-	// And have it read the given file with some example postprocessing
-	// Usually - if speed is not the most important aspect for you - you'll
-	// probably to request more postprocessing than we do in this example.
-	const aiScene *scene = importer.ReadFile(pFile,
-	                                         aiProcess_ValidateDataStructure | // Validates imported structure
-	                                         //	                                         aiProcess_MakeLeftHanded |
-	                                         //	                                         	                                         aiProcess_FlipWindingOrder |
-	                                         //                                             aiProcess_PreTransformVertices |
-	                                         aiProcess_RemoveRedundantMaterials | // Removes duplicated materials
-	                                         //	                                         aiProcess_FindInstances |
-	                                         //	                                         aiProcess_RemoveComponent |
-	                                         aiProcess_FindDegenerates |
-	                                         //	                                         aiProcess_GenUVCoords |
-	                                         aiProcess_Triangulate |
-	                                         aiProcess_FlipUVs |
-	                                         //                                             aiProcess_FindInvalidData |
-	                                         //                                             aiProcess_FixInfacingNormals |
-	                                         //                                             aiProcess_SplitLargeMeshes |
-	                                         //                                             aiProcess_SortByPType |
-	                                         //???
-	                                         //	                                         aiProcess_GenNormals |
-	                                         //	                                         aiProcess_CalcTangentSpace |
-	                                         //	                                         aiProcess_OptimizeMeshes |
-	                                         //                                                                                          aiProcess_JoinIdenticalVertices |
-	                                         //	                                         aiProcess_LimitBoneWeights |
-	                                         //	                                         aiProcess_ImproveCacheLocality |
-	                                         //                                             aiProcess_CalcTangentSpace |
-
-	                                         aiProcess_JoinIdenticalVertices |
-	                                         //	                                         aiProcess_SplitLargeMeshes |
-	                                         //	                                                                                      aiProcess_SortByPType |
-	                                         //                                             aiProcess_FlipUVs |
-	                                         //                                             aiProcess_FlipWindingOrder |
-	                                         0
-	);
-
-	// If the import failed, report it
-	if (!scene) {
-		std::cerr << "Could not read file" << std::endl;
-//		DoTheErrorLogging( importer.GetErrorString());
-		return false;
-	}
-	Assimp::DefaultLogger::kill();
-	std::cout << "Processing Geometry now...\n" << std::endl;
-
-	// Now we can access the file's contents.
-	processSceneObject(scene);
-
-	// We're done. Everything will be cleaned up by the importer destructor
-	return true;
-}
-
 void Application::setupDebugMessenger() {
 	//If no validation requested, just do nothing
 	vk::DebugUtilsMessengerCreateInfoEXT createInfo{};
@@ -80,8 +21,7 @@ void Application::cleanup() {
 	vkDestroyImageView(device, textureImageView, nullptr);
 	VulkanMemoryManager::getInstance()->DestroyImage(textureImage, textureImageMemory);
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
-	VulkanMemoryManager::getInstance()->DestroyBuffer(indexBuffer, indexBufferAllocation);
-	VulkanMemoryManager::getInstance()->DestroyBuffer(vertexBuffer, vertexBufferAllocation);
+	modelHandle.reset();
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 		device.destroySemaphore(renderFinishedSemaphores[i]);
 		device.destroySemaphore(imageAvailableSemaphores[i]);
@@ -444,21 +384,6 @@ void Application::createDescriptorSetLayout() {
 	descriptorSetLayout = device.createDescriptorSetLayout(layoutInfo);
 }
 
-
-void Application::createIndexBuffer() {
-	auto[buffer, allocation] =VulkanMemoryManager::getInstance()->createBufferTypeFromVector(indices,
-	                                                                                         vk::BufferUsageFlagBits::eIndexBuffer);
-	indexBuffer = buffer;
-	indexBufferAllocation = allocation;
-}
-
-void Application::createVertexBuffer() {
-	auto[buffer, allocation] = VulkanMemoryManager::getInstance()
-			->createBufferTypeFromVector<Vertex>(vertices, vk::BufferUsageFlagBits::eVertexBuffer);
-	vertexBuffer = buffer;
-	vertexBufferAllocation = allocation;
-}
-
 void Application::copyBufferToImage(vk::Buffer buffer, vk::Image image, uint32_t width, uint32_t height) {
 	vk::CommandBuffer commandBuffer = beginSingleTimeCommands();
 	vk::ImageSubresourceLayers subresource{vk::ImageAspectFlagBits::eColor, 0, 0, 1};
@@ -541,14 +466,15 @@ void Application::createCommandBuffers() {
 		                                       static_cast<uint32_t >(clearValues.size()), clearValues.data());
 		commandBuffers[i].beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
 		commandBuffers[i].bindPipeline(vk::PipelineBindPoint::eGraphics, graphicsPipeline);
-		vk::Buffer vertexBuffers[] = {vertexBuffer};
+		vk::Buffer vertexBuffers[] = {std::get<0>(modelHandle->GetMeshBuffer())};
 		vk::DeviceSize offsets[] = {0};
 		commandBuffers[i].bindVertexBuffers(0, 1, vertexBuffers, offsets);
-		commandBuffers[i].bindIndexBuffer(indexBuffer, offsets[0], vk::IndexType::eUint32);
+		commandBuffers[i].bindIndexBuffer(std::get<0>(modelHandle->GetIndicesBuffer()), offsets[0], vk::IndexType::eUint32);
 		commandBuffers[i].bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout, 0, 1,
 		                                     descriptorSets.data(), 0,
 		                                     nullptr);
-		commandBuffers[i].drawIndexed(static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+
+		commandBuffers[i].drawIndexed(modelHandle->GetIndexCount(), 1, 0, 0, 0);
 		commandBuffers[i].endRenderPass();
 		commandBuffers[i].end();
 	}
@@ -893,9 +819,8 @@ void Application::initVulkanAfterPipeline() {
 	createTextureImage();
 	createTextureImageView();
 	createTextureSampler();
-	readModelFile("../resources/models/chalet.obj");
-	createVertexBuffer();
-	createIndexBuffer();
+	modelHandle = std::make_unique<Model>("../resources/models/chalet.obj");
+	modelHandle->loadDataToGPU();
 	createUniformBuffers();
 	createDescriptorPool();
 	createDescriptorSets();
@@ -957,54 +882,6 @@ void Application::createGraphicsPipelineFromDescriptions(vk::VertexInputBindingD
 	graphicsPipeline = device.createGraphicsPipeline({}, pipelineInfo);
 	vkDestroyShaderModule(device, verMod, nullptr);
 	vkDestroyShaderModule(device, fraMod, nullptr);
-}
-
-void Application::processSceneObject(const aiScene *scene) {
-	using namespace std;
-	cout << "There are: " << scene->mNumMeshes << " meshes stored." << endl;
-	auto root = scene->mRootNode;
-	cout << "Root has " << root->mNumChildren << " children." << endl;
-	cout << "Root also has: " << root->mNumMeshes << " meshes associated with it." << endl;
-	aiMesh *mesh{scene->mMeshes[0]};
-	if (root->mNumChildren) {
-		cout << "Child of root:" << endl;
-		auto child = root->mChildren[0];
-		cout << "has " << root->mChildren[0]->mNumChildren << " amount of children" << endl;
-		cout << "Child has: " << child->mNumMeshes << " meshes associated with it." << endl;
-		mesh = scene->mMeshes[child->mMeshes[0]];
-	}
-	cout << "There are: " << scene->mNumMaterials << " materials" << endl;
-	if (mesh->HasTextureCoords(0)) {
-		cout << "The given mesh has texture coordinates" << endl;
-		cout << "There are " << mesh->GetNumUVChannels() << " UV channels" << endl;
-	}
-	if (mesh->HasVertexColors(0)) {
-		cout << "The given mesh has vertex colors" << endl;
-	}
-	cout << "Going to read in: " << mesh->mNumVertices << " amount of vertices." << endl;
-	vertices.resize(mesh->mNumVertices);
-	indices.clear();
-	int channel = 0;
-	cout << "Using channel " << channel << " for getting UV coord" << endl;
-	for (size_t i{}; i < mesh->mNumVertices; i++) {
-		auto vertex_point = mesh->mVertices[i];
-		auto color_point = mesh->mTextureCoords[channel][i];
-		Vertex toAdd{{vertex_point[0], vertex_point[1], vertex_point[2]},
-		             {1.0f,            1.0f,            1.0f},
-		             {color_point[0],
-		                               color_point[1]}};
-
-		vertices[i] = toAdd;
-
-	}
-	cout << "There are now " << vertices.size() << " vertices read in" << endl;
-	cout << "There are " << mesh->mNumFaces << " number of faces." << endl;
-	for (size_t i{}; i < mesh->mNumFaces; i++) {
-		for (size_t j{}; j < mesh->mFaces[i].mNumIndices; j++) {
-			indices.push_back(mesh->mFaces[i].mIndices[j]);
-		}
-	}
-	cout << "There are now: " << indices.size() << " number of indices" << endl;
 }
 
 void Application::generateMipmaps(vk::Image image, vk::Format imageFormat, int32_t texWidth, int32_t texHeight,
@@ -1079,21 +956,7 @@ void Application::createColorResources() {
 	colorImageView = createImageView(colorImage, colorFormat, vk::ImageAspectFlagBits::eColor, 1);
 }
 
-Application::Application()
-		: vertices{
-		{{-0.5f, -0.5f, 0.0f},  {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-		{{0.5f,  -0.5f, 0.0f},  {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-		{{0.5f,  0.5f,  0.0f},  {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-		{{-0.5f, 0.5f,  0.0f},  {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
-
-		{{-1.5f, -1.5f, -1.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-		{{1.5f,  -1.5f, -1.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-		{{1.5f,  1.5f,  -1.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-		{{-1.5f, 1.5f,  -1.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}},
-		  indices{
-				  0, 1, 2, 2, 3, 0,
-				  4, 5, 6, 6, 7, 4} {
-}
+Application::Application() = default;
 
 void Application::initGlobalVmaAllocator() {
 	VulkanMemoryManager::Init(device, physicalDevice, commandPool, graphicsQueue);

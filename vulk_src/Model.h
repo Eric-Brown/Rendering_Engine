@@ -5,43 +5,37 @@
 #ifndef DNDIDEA_MODEL_H
 #define DNDIDEA_MODEL_H
 
-
-
-#include <vector>
-#include <glm/glm.hpp>
-#include <assimp/DefaultIOStream.h>
-#include <assimp/Importer.hpp>
-#include <assimp/DefaultLogger.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
-#include <vk_mem_alloc.h>
+#include "ExternalHeaders.h"
+#include "VulkanMemoryManager.h"
+#include "Vertex.h"
 
 class Model {
 private:
-	std::vector<Vertex> mesh{};
-	std::vector<uint32_t> meshIndexes{};
-	glm::mat4 model_transform{1.0f};
+  std::vector<Vertex> mesh{};
+  std::vector<uint32_t> meshIndexes{};
+  glm::mat4 model_transform{1.0f};
+ std::tuple<vk::Buffer, VmaAllocation> vertexBuffer{};
+ std::tuple<vk::Buffer, VmaAllocation> indexBuffer{};
 public:
-//	Model(const char* fName);
-//	Model(const std::string fName);
-	Model(std::vector<Vertex> &preloadedMesh, std::vector<uint32_t> preloadedMeshIndices);
 
-	Model(std::string fName);
+  Model(const std::string fName);
 
-	const std::vector<Vertex> &GetMesh();
+  ~Model() noexcept;
 
-	const std::vector<uint32_t> &GetIndices();
+  const std::tuple<vk::Buffer, VmaAllocation> &GetMeshBuffer();
 
-	const glm::mat4 &GetModelTransform();
+  const std::tuple<vk::Buffer, VmaAllocation> &GetIndicesBuffer();
 
-	void loadDataToGPU();
+  const uint32_t GetIndexCount();
+
+  const glm::mat4 &GetModelTransform();
+
+  void loadDataToGPU();
 
 private:
-	bool readModelFile(const std::string &pFile);
+  bool readModelFile(const std::string &pFile);
 
-	void processSceneObject(const aiScene *scene);
-
+  void processSceneObject(const aiScene *scene);
 };
 
-
-#endif //DNDIDEA_MODEL_H
+#endif // DNDIDEA_MODEL_H

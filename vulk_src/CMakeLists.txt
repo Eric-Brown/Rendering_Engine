@@ -6,7 +6,7 @@ add_executable(${PROJECT_NAME} main.cpp
         ExternalHeaders.h
         Application.cpp Application.h
         Vertex.h Vertex.cpp
-#        Model.cpp Model.h
+        Model.cpp Model.h
         VulkanMemoryManager.cpp VulkanMemoryManager.h
         )
 target_link_libraries(${PROJECT_NAME} PRIVATE

@@ -8,15 +8,16 @@
 #include "ExternalHeaders.h"
 
 struct Vertex {
-	glm::vec3 pos;
-	glm::vec3 color;
-	glm::vec2 texCoord;
+  glm::vec3 pos;
+  glm::vec3 color;
+  glm::vec2 texCoord;
 
-	static vk::VertexInputBindingDescription getBindingDescription();
+  static vk::VertexInputBindingDescription getBindingDescription();
 
-	static std::array<vk::VertexInputAttributeDescription, 3> getAttributeDescriptions();
+  static std::array<vk::VertexInputAttributeDescription, 3>
+  getAttributeDescriptions();
 
-	friend std::ostream &operator<<(std::ostream &os, const Vertex &vertex);
+  friend std::ostream &operator<<(std::ostream &os, const Vertex &vertex);
 };
 
-#endif //DNDIDEA_VERTEX_H
+#endif // DNDIDEA_VERTEX_H
