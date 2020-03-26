@@ -84,6 +84,13 @@ vk::CommandBuffer VulkanMemoryManager::beginSingleTimeCommands() {
 	return commandBuffer;
 }
 
+vk::DeviceSize VulkanMemoryManager::GetAllocationSize(VmaAllocation allocation)
+{
+	VmaAllocationInfo toCheck;
+	vmaGetAllocationInfo(allocator, allocation, &toCheck);
+	return toCheck.size;
+}
+
 VulkanMemoryManager::VulkanMemoryManager(vk::Device device, vk::PhysicalDevice physDevice, vk::CommandPool pool,
                                          vk::Queue queue)
 		: logicalDevice{device}, physicalDevice{physDevice},

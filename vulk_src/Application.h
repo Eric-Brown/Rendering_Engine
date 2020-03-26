@@ -33,6 +33,7 @@ static const char *const TEXTURE_FORMAT_NOT_SUPPORT_BLITTING_MSG = "Texture imag
 
 #include "VulkanMemoryManager.h"
 #include "Vertex.h"
+#include "Model.h"
 
 struct UniformBufferObject {
 	alignas(16) glm::mat4 model;
@@ -78,12 +79,6 @@ private:
 	std::vector<vk::Fence> inFlightFences{};
 	size_t currentFrame = 0;
 	bool framebufferResized{false};
-	std::vector<Vertex> vertices{};
-	std::vector<uint32_t> indices{};
-	vk::Buffer vertexBuffer{};
-	VmaAllocation vertexBufferAllocation{};
-	vk::Buffer indexBuffer{};
-	VmaAllocation indexBufferAllocation{};
 	uint32_t mipLevels{}; //for texture
 	vk::Image textureImage{};
 	VmaAllocation textureImageMemory{};
@@ -102,6 +97,7 @@ private:
 	// Done so that validation can be toggled in the future
 	//	static const bool enableValidationLayers = true;
 	std::vector<vk::DescriptorSet> descriptorSets{};
+	std::unique_ptr<Model> modelHandle{};
 public:
 	Application();
 
@@ -222,10 +218,6 @@ private:
 
 	void copyBufferToImage(vk::Buffer buffer, vk::Image image, uint32_t width, uint32_t height);
 
-	void createVertexBuffer();
-
-	void createIndexBuffer();
-
 	void createUniformBuffers();
 
 	void createDescriptorPool();
@@ -266,10 +258,6 @@ private:
 	                    vk::FormatFeatureFlags features);
 
 	void createDepthResources();
-
-	bool readModelFile(const std::string &pFile);
-
-	void processSceneObject(const aiScene *scene);
 
 	vk::ApplicationInfo createApplicationInfo() const;
 

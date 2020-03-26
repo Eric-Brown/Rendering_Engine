@@ -6,6 +6,7 @@
 #define DNDIDEA_MODEL_H
 
 #include "ExternalHeaders.h"
+#include "VulkanMemoryManager.h"
 #include "Vertex.h"
 
 class Model {
@@ -13,18 +14,19 @@ private:
   std::vector<Vertex> mesh{};
   std::vector<uint32_t> meshIndexes{};
   glm::mat4 model_transform{1.0f};
-
+ std::tuple<vk::Buffer, VmaAllocation> vertexBuffer{};
+ std::tuple<vk::Buffer, VmaAllocation> indexBuffer{};
 public:
-  //	Model(const char* fName);
-  //	Model(const std::string fName);
-  Model(std::vector<Vertex> &preloadedMesh,
-        std::vector<uint32_t> preloadedMeshIndices);
 
-  Model(std::string fName);
+  Model(const std::string fName);
 
-  const std::vector<Vertex> &GetMesh();
+  ~Model() noexcept;
 
-  const std::vector<uint32_t> &GetIndices();
+  const std::tuple<vk::Buffer, VmaAllocation> &GetMeshBuffer();
+
+  const std::tuple<vk::Buffer, VmaAllocation> &GetIndicesBuffer();
+
+  const uint32_t GetIndexCount();
 
   const glm::mat4 &GetModelTransform();
 

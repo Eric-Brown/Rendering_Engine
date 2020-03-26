@@ -1,17 +1,19 @@
+#include "Model.h"
+#include "Model.h"
 //
 // Created by alexa on 3/23/2020.
 //
 
 #include "Model.h"
 
-Model::Model(std::vector<Vertex> &preloadedMesh,
-             std::vector<uint32_t> preloadedMeshIndices)
-    : mesh(std::move(preloadedMesh)),
-      meshIndexes(std::move(preloadedMeshIndices)) {}
+const std::tuple<vk::Buffer, VmaAllocation> &Model::GetMeshBuffer() { return vertexBuffer; }
 
-const std::vector<Vertex> &Model::GetMesh() { return mesh; }
+const std::tuple<vk::Buffer, VmaAllocation> &Model::GetIndicesBuffer() { return indexBuffer; }
 
-const std::vector<uint32_t> &Model::GetIndices() { return meshIndexes; }
+const uint32_t Model::GetIndexCount()
+{
+    return static_cast<uint32_t>(meshIndexes.size());
+}
 
 const glm::mat4 &Model::GetModelTransform() { return model_transform; }
 
@@ -88,9 +90,26 @@ void Model::processSceneObject(const aiScene *scene) {
        << endl;
 }
 
-Model::Model(std::string fName) {
+Model::Model(const std::string fName) {
   // consider checks
   readModelFile(fName);
 }
 
-void Model::loadDataToGPU() {}
+Model::~Model() noexcept
+{
+    if (std::get<0>(vertexBuffer) != vk::Buffer{}) {
+        VulkanMemoryManager::getInstance()->DestroyBuffer(std::get<0>(vertexBuffer), std::get<1>(vertexBuffer));
+    }
+    if (std::get<0>(indexBuffer) != vk::Buffer{}) {
+        VulkanMemoryManager::getInstance()->DestroyBuffer(std::get<0>(indexBuffer), std::get<1>(indexBuffer));
+    }
+}
+
+void Model::loadDataToGPU() {
+  vertexBuffer = VulkanMemoryManager::getInstance()->createBufferTypeFromVector(
+      mesh, vk::BufferUsageFlagBits::eVertexBuffer);
+  indexBuffer = VulkanMemoryManager::getInstance()->createBufferTypeFromVector(
+      meshIndexes, vk::BufferUsageFlagBits::eIndexBuffer);
+}
+
+

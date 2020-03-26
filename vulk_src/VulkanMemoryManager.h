@@ -51,6 +51,8 @@ public:
     return std::make_tuple(bufferToReturn, allocationToReturn);
   }
 
+  vk::DeviceSize GetAllocationSize(VmaAllocation allocation);
+
 private:
   VulkanMemoryManager(vk::Device device, vk::PhysicalDevice physDevice,
                       vk::CommandPool pool, vk::Queue queue);
