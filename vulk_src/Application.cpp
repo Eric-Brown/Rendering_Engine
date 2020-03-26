@@ -880,15 +880,15 @@ void Application::initVulkanBeforePipeline() {
 	createSurface();
 	pickPhysicalDevice();
 	createLogicalDevice();
-	initGlobalVmaAllocator();
 	createSwapChain();
 	createImageViews();
 	createRenderPass();
 	createDescriptorSetLayout();
+	createCommandPool();
+	initGlobalVmaAllocator();
 }
 
 void Application::initVulkanAfterPipeline() {
-	createCommandPool();
 	createColorResources();
 	createDepthResources();
 	createFramebuffers();
@@ -1098,7 +1098,7 @@ Application::Application()
 }
 
 void Application::initGlobalVmaAllocator() {
-	VulkanMemoryManager::Init(device, physicalDevice);
+	VulkanMemoryManager::Init(device, physicalDevice, commandPool, graphicsQueue);
 }
 
 void Application::destroyGlobalAllocator() {

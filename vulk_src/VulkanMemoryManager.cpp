@@ -28,19 +28,6 @@ VulkanMemoryManager::createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usag
 	buffer = vkCBuffer;
 }
 
-void VulkanMemoryManager::Init(vk::Device device, vk::PhysicalDevice physicalDevice) {
-	if (!vmmInstance) {
-		vmmInstance = new VulkanMemoryManager(device, physicalDevice);
-	}
-}
-
-VulkanMemoryManager::VulkanMemoryManager(vk::Device device, vk::PhysicalDevice physicalDevice) {
-	VmaAllocatorCreateInfo allocatorCreateInfo{};
-	allocatorCreateInfo.physicalDevice = physicalDevice;
-	allocatorCreateInfo.device = device;
-	vmaCreateAllocator(&allocatorCreateInfo, &allocator);
-}
-
 VulkanMemoryManager *VulkanMemoryManager::getInstance() {
 	return vmmInstance;
 }
@@ -85,14 +72,31 @@ void VulkanMemoryManager::endSingleTimeCommands(vk::CommandBuffer commandBuffer)
 	vk::SubmitInfo submitInfo{{}, {}, {}, 1, &commandBuffer};
 	graphicsQueue.submit(1, &submitInfo, {});
 	graphicsQueue.waitIdle();
-	device.freeCommandBuffers(commandPool, 1, &commandBuffer);
+	logicalDevice.freeCommandBuffers(commandPool, 1, &commandBuffer);
 }
 
 vk::CommandBuffer VulkanMemoryManager::beginSingleTimeCommands() {
 	vk::CommandBufferAllocateInfo allocInfo{commandPool, vk::CommandBufferLevel::ePrimary, 1};
-	auto buffers{device.allocateCommandBuffers(allocInfo)};
+	auto buffers{logicalDevice.allocateCommandBuffers(allocInfo)};
 	vk::CommandBuffer commandBuffer{buffers[0]};
 	vk::CommandBufferBeginInfo beginInfo{vk::CommandBufferUsageFlagBits::eOneTimeSubmit};
 	commandBuffer.begin(beginInfo);
 	return commandBuffer;
+}
+
+VulkanMemoryManager::VulkanMemoryManager(vk::Device device, vk::PhysicalDevice physDevice, vk::CommandPool pool,
+                                         vk::Queue queue)
+		: logicalDevice{device}, physicalDevice{physDevice},
+		  commandPool{pool}, graphicsQueue{queue} {
+	VmaAllocatorCreateInfo allocatorCreateInfo{};
+	allocatorCreateInfo.physicalDevice = physDevice;
+	allocatorCreateInfo.device = device;
+	vmaCreateAllocator(&allocatorCreateInfo, &allocator);
+}
+
+void
+VulkanMemoryManager::Init(vk::Device device, vk::PhysicalDevice physDevice, vk::CommandPool pool, vk::Queue queue) {
+	if (!vmmInstance) {
+		vmmInstance = new VulkanMemoryManager(device, physDevice, pool, queue);
+	}
 }

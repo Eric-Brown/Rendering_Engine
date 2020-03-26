@@ -9,7 +9,7 @@
 
 class VulkanMemoryManager {
 public:
-	static void Init(vk::Device device, vk::PhysicalDevice physicalDevice);
+	static void Init(vk::Device device, vk::PhysicalDevice physDevice, vk::CommandPool pool, vk::Queue queue);
 
 	static VulkanMemoryManager *getInstance();
 
@@ -38,23 +38,25 @@ public:
 		VmaAllocation allocationToReturn;
 		createBuffer(bufferSize, vk::BufferUsageFlagBits::eTransferDst | bufferType, VMA_MEMORY_USAGE_GPU_ONLY,
 		             bufferToReturn, allocationToReturn);
-//		copyBuffer(stagingBuffer, bufferToReturn, bufferSize); ERROR HERE
+		copyBuffer(stagingBuffer, bufferToReturn, bufferSize);
 		vmaDestroyBuffer(allocator, stagingBuffer, stagingBufferAllocation);
 		return std::make_tuple(bufferToReturn, allocationToReturn);
 	}
 
 private:
-	VulkanMemoryManager(vk::Device device, vk::PhysicalDevice physicalDevice);
+	VulkanMemoryManager(vk::Device device, vk::PhysicalDevice physDevice, vk::CommandPool pool, vk::Queue queue);
 
 	static inline VulkanMemoryManager *vmmInstance{};
 	VmaAllocator allocator;
-	vk::Device device;
+	vk::Device logicalDevice;
 	vk::PhysicalDevice physicalDevice;
 	vk::CommandPool commandPool;
 	vk::Queue graphicsQueue;
 
 	void copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size);
+
 	vk::CommandBuffer beginSingleTimeCommands();
+
 	void endSingleTimeCommands(vk::CommandBuffer commandBuffer);
 };
 
