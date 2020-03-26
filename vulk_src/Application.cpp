@@ -455,8 +455,8 @@ void Application::createIndexBuffer() {
 void Application::createVertexBuffer() {
 	std::cout << "I have " << vertices.size() << " vertices" << std::endl;
 	std::cout << "Total stride: " << sizeof(Vertex) << std::endl;
-//	auto[buffer, allocation] = VulkanMemoryManager::getInstance()
-//			->createBufferTypeFromVector<Vertex>(vertices, vk::BufferUsageFlagBits::eVertexBuffer);
+	auto[buffer, allocation] = VulkanMemoryManager::getInstance()
+			->createBufferTypeFromVector<Vertex>(vertices, vk::BufferUsageFlagBits::eVertexBuffer);
 //	vertexBuffer = buffer;
 //	vertexBufferAllocation = allocation;
 }

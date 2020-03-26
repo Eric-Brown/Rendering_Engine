@@ -73,9 +73,9 @@ void VulkanMemoryManager::CopyDataToAllocation(void *toCopy, vk::DeviceSize copy
 	vmaUnmapMemory(allocator, allocation);
 }
 
-//void VulkanMemoryManager::copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size) {
-//	vk::CommandBuffer commandBuffer = beginSingleTimeCommands();
-//	vk::BufferCopy copyRegion({}, {}, size);
-//	commandBuffer.copyBuffer(srcBuffer, dstBuffer, 1, &copyRegion);
-//	endSingleTimeCommands(commandBuffer);
-//}
+void VulkanMemoryManager::copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, uint64_t size) {
+	vk::CommandBuffer commandBuffer = beginSingleTimeCommands();
+	vk::BufferCopy copyRegion({}, {}, size);
+	commandBuffer.copyBuffer(srcBuffer, dstBuffer, 1, &copyRegion);
+	endSingleTimeCommands(commandBuffer);
+}

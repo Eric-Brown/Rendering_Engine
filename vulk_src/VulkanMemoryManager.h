@@ -48,10 +48,12 @@ private:
 
 	static inline VulkanMemoryManager *vmmInstance{};
 	VmaAllocator allocator;
+	vk::Device device;
+	vk::PhysicalDevice physicalDevice;
+	vk::CommandPool commandPool;
 
-//	void copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size);
+	void copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size);
 
 };
 
-//VulkanMemoryManager *VulkanMemoryManager::vmmInstance{nullptr};
 #endif //DNDIDEA_VULKANMEMORYMANAGER_H
