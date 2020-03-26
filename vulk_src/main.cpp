@@ -12,17 +12,14 @@
 #include <iostream>
 #include <stdexcept>
 
-
-
-int main(int , char **) {
-	using namespace std;
-	Application app;
-	try {
-		app.run();
-	}
-	catch (exception &exception1) {
-		cerr << exception1.what() << endl;
-		return EXIT_FAILURE;
-	}
-	return EXIT_SUCCESS;
+int main(int, char **) {
+  using namespace std;
+  Application app;
+  try {
+    app.run();
+  } catch (exception &exception1) {
+    cerr << exception1.what() << endl;
+    return EXIT_FAILURE;
+  }
+  return EXIT_SUCCESS;
 }

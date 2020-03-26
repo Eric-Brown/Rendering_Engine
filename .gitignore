@@ -16,4 +16,4 @@ out
 *.blend
 
 # Ignore vkvia.exe (from vulkan sdk) output.
-vkvia.html
+vkvia.html\
