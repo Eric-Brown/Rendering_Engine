@@ -448,8 +448,8 @@ void Application::createIndexBuffer() {
 	std::cout << "index count when creating buffer: " << indices.size() << std::endl;
 	auto[buffer, allocation] =VulkanMemoryManager::getInstance()->createBufferTypeFromVector(indices,
 	                                                                                         vk::BufferUsageFlagBits::eIndexBuffer);
-//	indexBuffer = buffer;
-//	indexBufferAllocation = allocation;
+	indexBuffer = buffer;
+	indexBufferAllocation = allocation;
 }
 
 void Application::createVertexBuffer() {
@@ -457,8 +457,8 @@ void Application::createVertexBuffer() {
 	std::cout << "Total stride: " << sizeof(Vertex) << std::endl;
 	auto[buffer, allocation] = VulkanMemoryManager::getInstance()
 			->createBufferTypeFromVector<Vertex>(vertices, vk::BufferUsageFlagBits::eVertexBuffer);
-//	vertexBuffer = buffer;
-//	vertexBufferAllocation = allocation;
+	vertexBuffer = buffer;
+	vertexBufferAllocation = allocation;
 }
 
 void Application::copyBufferToImage(vk::Buffer buffer, vk::Image image, uint32_t width, uint32_t height) {
