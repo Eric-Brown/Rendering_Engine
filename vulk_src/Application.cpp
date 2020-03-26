@@ -78,19 +78,17 @@ void Application::cleanup() {
 	cleanupSwapChain();
 	vkDestroySampler(device, textureSampler, nullptr);
 	vkDestroyImageView(device, textureImageView, nullptr);
-	vkDestroyImage(device, textureImage, nullptr);
-	vkFreeMemory(device, textureImageMemory, nullptr);
+	VulkanMemoryManager::getInstance()->DestroyImage(textureImage, textureImageMemory);
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
-	vkDestroyBuffer(device, indexBuffer, nullptr);
-	vkFreeMemory(device, indexBufferMemory, nullptr);
-	vkDestroyBuffer(device, vertexBuffer, nullptr);
-	vkFreeMemory(device, vertexBufferMemory, nullptr);
+	VulkanMemoryManager::getInstance()->DestroyBuffer(indexBuffer, indexBufferAllocation);
+	VulkanMemoryManager::getInstance()->DestroyBuffer(vertexBuffer, vertexBufferAllocation);
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-		vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
-		vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
-		vkDestroyFence(device, inFlightFences[i], nullptr);
+		device.destroySemaphore(renderFinishedSemaphores[i]);
+		device.destroySemaphore(imageAvailableSemaphores[i]);
+		device.destroyFence(inFlightFences[i]);
 	}
-	vkDestroyCommandPool(device, commandPool, nullptr);
+	device.destroyCommandPool(commandPool);
+	destroyGlobalAllocator();
 	vkDestroyDevice(device, nullptr);
 	// Can add logic to test if we are debugging or not
 	vk::DynamicLoader dl;
@@ -195,16 +193,14 @@ void Application::updateUniformBuffer(uint32_t currentImage) {
 	ubo.proj = glm::perspective(glm::radians(90.0f), swapChainExtent.width / (float) swapChainExtent.height, 0.1f,
 	                            40.0f);
 	ubo.proj[1][1] *= -1;
-	void *data;
-	vkMapMemory(device, uniformBuffersMemory[currentImage], 0, sizeof(ubo), 0, &data);
-	memcpy(data, &ubo, sizeof(ubo));
-	vkUnmapMemory(device, uniformBuffersMemory[currentImage]);
+	VulkanMemoryManager::getInstance()
+			->CopyDataToAllocation(&ubo, sizeof(ubo), uniformBuffersAllocations[currentImage]);
 }
 
 vk::Bool32 Application::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                                              VkDebugUtilsMessageTypeFlagsEXT,
-                                              const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
-                                              void *) {
+                                      VkDebugUtilsMessageTypeFlagsEXT,
+                                      const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
+                                      void *) {
 	using namespace std;
 	if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
 		cerr << "Validation layer: " << pCallbackData->pMessage << endl;
@@ -286,7 +282,7 @@ void Application::createInstance() {
 void Application::createDepthResources() {
 	vk::Format depthFormat = findDepthFormat();
 	createImage(swapChainExtent.width, swapChainExtent.height, 1, msaaSamples, depthFormat, vk::ImageTiling::eOptimal,
-	            vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, depthImage,
+	            vk::ImageUsageFlagBits::eDepthStencilAttachment, VMA_MEMORY_USAGE_GPU_ONLY, depthImage,
 	            depthImageMemory);
 	depthImageView = createImageView(depthImage, depthFormat, vk::ImageAspectFlagBits::eDepth, 1);
 	transitionImageLayout(depthImage, depthFormat, vk::ImageLayout::eUndefined,
@@ -294,7 +290,7 @@ void Application::createDepthResources() {
 }
 
 vk::Format Application::findSupportedFormat(const std::vector<vk::Format> &candidates, vk::ImageTiling tiling,
-                                                    vk::FormatFeatureFlags features) {
+                                            vk::FormatFeatureFlags features) {
 	for (vk::Format format : candidates) {
 		vk::FormatProperties props;
 		physicalDevice.getFormatProperties(format, &props);
@@ -332,7 +328,7 @@ void Application::createTextureImageView() {
 }
 
 vk::ImageView Application::createImageView(vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags,
-                                                   uint32_t inMipLevels) {
+                                           uint32_t inMipLevels) {
 	vk::ImageSubresourceRange subresourceRange{aspectFlags, 0, inMipLevels, 0, 1};
 	vk::ImageViewCreateInfo viewInfo{{}, image, vk::ImageViewType::e2D, format, {}, subresourceRange};
 	return device.createImageView(viewInfo);
@@ -348,15 +344,8 @@ void Application::createTextureImage() {
 	if (!pixels) {
 		throw std::runtime_error("failed to load texture image!");
 	}
-	vk::Buffer stagingBuffer;
-	vk::DeviceMemory stagingBufferMemory;
-	createBuffer(imageSize, vk::BufferUsageFlagBits::eTransferSrc,
-	             vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, stagingBuffer,
-	             stagingBufferMemory);
-	void *data;
-	vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &data);
-	memcpy(data, pixels, static_cast<size_t>(imageSize));
-	vkUnmapMemory(device, stagingBufferMemory);
+	auto[stagingBuffer, stagingBufferMemory] =VulkanMemoryManager::getInstance()
+			->initializeStagingBuffer(pixels, imageSize);
 	stbi_image_free(pixels);
 	createImage(static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight), mipLevels,
 	            vk::SampleCountFlagBits::e1,
@@ -364,14 +353,13 @@ void Application::createTextureImage() {
 	            vk::ImageTiling::eOptimal,
 	            vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst |
 	            vk::ImageUsageFlagBits::eSampled,
-	            vk::MemoryPropertyFlagBits::eDeviceLocal, textureImage, textureImageMemory);
+	            VMA_MEMORY_USAGE_GPU_ONLY, textureImage, textureImageMemory);
 
 	transitionImageLayout(textureImage, vk::Format::eR8G8B8A8Unorm, vk::ImageLayout::eUndefined,
 	                      vk::ImageLayout::eTransferDstOptimal, mipLevels);
 	copyBufferToImage(stagingBuffer, textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
 	generateMipmaps(textureImage, vk::Format::eR8G8B8A8Unorm, texWidth, texHeight, mipLevels);
-	vkDestroyBuffer(device, stagingBuffer, nullptr);
-	vkFreeMemory(device, stagingBufferMemory, nullptr);
+	VulkanMemoryManager::getInstance()->DestroyBuffer(stagingBuffer, stagingBufferMemory);
 }
 
 void Application::endSingleTimeCommands(vk::CommandBuffer commandBuffer) {
@@ -393,18 +381,18 @@ vk::CommandBuffer Application::beginSingleTimeCommands() {
 
 void
 Application::createImage(uint32_t width, uint32_t height, uint32_t imageMipLevels,
-                                 vk::SampleCountFlagBits numSamples,
-                                 vk::Format format,
-                                 vk::ImageTiling tiling,
-                                 vk::ImageUsageFlags usage, vk::MemoryPropertyFlags properties, vk::Image &image,
-                                 vk::DeviceMemory &imageMemory) {
+                         vk::SampleCountFlagBits numSamples,
+                         vk::Format format,
+                         vk::ImageTiling tiling,
+                         vk::ImageUsageFlags usage, VmaMemoryUsage memUsage, vk::Image &image,
+                         VmaAllocation &imageMemory) {
 	vk::ImageCreateInfo imageInfo{{}, vk::ImageType::e2D, format, vk::Extent3D{width, height, 1}, imageMipLevels, 1,
 	                              numSamples, tiling, usage, vk::SharingMode::eExclusive, {}, {}, {}};
-	image = device.createImage(imageInfo);
-	vk::MemoryRequirements memRequirements{device.getImageMemoryRequirements(image)};
-	vk::MemoryAllocateInfo allocInfo{memRequirements.size, findMemoryType(memRequirements.memoryTypeBits, properties)};
-	imageMemory = device.allocateMemory(allocInfo);
-	device.bindImageMemory(image, imageMemory, 0);
+	VmaAllocationCreateInfo allocationCreateInfo{};
+	allocationCreateInfo.usage = memUsage;
+	auto[retImg, imgAlloc] = VulkanMemoryManager::getInstance()->createImage(imageInfo, allocationCreateInfo);
+	image = retImg;
+	imageMemory = imgAlloc;
 }
 
 void Application::createDescriptorSets() {
@@ -438,11 +426,11 @@ void Application::createDescriptorPool() {
 void Application::createUniformBuffers() {
 	vk::DeviceSize bufferSize = sizeof(UniformBufferObject);
 	uniformBuffers.resize(swapChainImages.size());
-	uniformBuffersMemory.resize(swapChainImages.size());
+	uniformBuffersAllocations.resize(swapChainImages.size());
 	for (size_t i = 0; i < swapChainImages.size(); i++) {
-		createBuffer(bufferSize, vk::BufferUsageFlagBits::eUniformBuffer,
-		             vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
-		             uniformBuffers[i], uniformBuffersMemory[i]);
+		VulkanMemoryManager::getInstance()
+				->createBuffer(bufferSize, vk::BufferUsageFlagBits::eUniformBuffer, VMA_MEMORY_USAGE_CPU_ONLY,
+				               uniformBuffers[i], uniformBuffersAllocations[i]);
 	}
 }
 
@@ -456,43 +444,19 @@ void Application::createDescriptorSetLayout() {
 	descriptorSetLayout = device.createDescriptorSetLayout(layoutInfo);
 }
 
+
 void Application::createIndexBuffer() {
-	std::cout << "index count when creating buffer: " << indices.size() << std::endl;
-	vk::DeviceSize bufferSize = sizeof(indices[0]) * indices.size();
-	vk::Buffer stagingBuffer;
-	vk::DeviceMemory stagingBufferMemory;
-	createBuffer(bufferSize, vk::BufferUsageFlagBits::eTransferSrc,
-	             vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, stagingBuffer,
-	             stagingBufferMemory);
-	void *data;
-	device.mapMemory(stagingBufferMemory, 0, bufferSize, {}, &data);
-	memcpy(data, indices.data(), (size_t) bufferSize);
-	device.unmapMemory(stagingBufferMemory);
-	createBuffer(bufferSize, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer,
-	             vk::MemoryPropertyFlagBits::eDeviceLocal, indexBuffer, indexBufferMemory);
-	copyBuffer(stagingBuffer, indexBuffer, bufferSize);
-	device.destroyBuffer(stagingBuffer, nullptr);
-	device.freeMemory(stagingBufferMemory, nullptr);
+	auto[buffer, allocation] =VulkanMemoryManager::getInstance()->createBufferTypeFromVector(indices,
+	                                                                                         vk::BufferUsageFlagBits::eIndexBuffer);
+	indexBuffer = buffer;
+	indexBufferAllocation = allocation;
 }
 
 void Application::createVertexBuffer() {
-	std::cout << "I have " << vertices.size() << " vertices" << std::endl;
-	std::cout << "Total stride: " << sizeof(Vertex) << std::endl;
-	vk::DeviceSize bufferSize = sizeof(Vertex) * vertices.size();
-	vk::Buffer stagingBuffer;
-	vk::DeviceMemory stagingBufferMemory;
-	createBuffer(bufferSize, vk::BufferUsageFlagBits::eTransferSrc,
-	             vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, stagingBuffer,
-	             stagingBufferMemory);
-	void *data;
-	device.mapMemory(stagingBufferMemory, 0, bufferSize, {}, &data);
-	memcpy(data, vertices.data(), (size_t) bufferSize);
-	device.unmapMemory(stagingBufferMemory);
-	createBuffer(bufferSize, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer,
-	             vk::MemoryPropertyFlagBits::eDeviceLocal, vertexBuffer, vertexBufferMemory);
-	copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
-	device.destroyBuffer(stagingBuffer, nullptr);
-	device.freeMemory(stagingBufferMemory, nullptr);
+	auto[buffer, allocation] = VulkanMemoryManager::getInstance()
+			->createBufferTypeFromVector<Vertex>(vertices, vk::BufferUsageFlagBits::eVertexBuffer);
+	vertexBuffer = buffer;
+	vertexBufferAllocation = allocation;
 }
 
 void Application::copyBufferToImage(vk::Buffer buffer, vk::Image image, uint32_t width, uint32_t height) {
@@ -506,7 +470,7 @@ void Application::copyBufferToImage(vk::Buffer buffer, vk::Image image, uint32_t
 }
 
 void Application::transitionImageLayout(vk::Image image, vk::Format format, vk::ImageLayout oldLayout,
-                                                vk::ImageLayout newLayout, uint32_t inMipLevels) {
+                                        vk::ImageLayout newLayout, uint32_t inMipLevels) {
 	vk::CommandBuffer commandBuffer = beginSingleTimeCommands();
 	vk::ImageSubresourceRange imageSubresourceRange({}, 0, inMipLevels, 0, 1);
 	vk::ImageMemoryBarrier barrier({}, {}, oldLayout, newLayout, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
@@ -543,24 +507,6 @@ void Application::transitionImageLayout(vk::Image image, vk::Format format, vk::
 	}
 	commandBuffer.pipelineBarrier(sourceStage, destinationStage, {}, 0, nullptr, 0, nullptr, 1, &barrier);
 	endSingleTimeCommands(commandBuffer);
-}
-
-void Application::copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size) {
-	vk::CommandBuffer commandBuffer = beginSingleTimeCommands();
-	vk::BufferCopy copyRegion({}, {}, size);
-	commandBuffer.copyBuffer(srcBuffer, dstBuffer, 1, &copyRegion);
-	endSingleTimeCommands(commandBuffer);
-}
-
-void
-Application::createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties,
-                                  vk::Buffer &buffer, vk::DeviceMemory &bufferMemory) {
-	vk::BufferCreateInfo bufferInfo({}, size, usage, vk::SharingMode::eExclusive);
-	buffer = device.createBuffer(bufferInfo);
-	vk::MemoryRequirements memRequirements{device.getBufferMemoryRequirements(buffer)};
-	vk::MemoryAllocateInfo allocInfo(memRequirements.size, findMemoryType(memRequirements.memoryTypeBits, properties));
-	bufferMemory = device.allocateMemory(allocInfo);
-	device.bindBufferMemory(buffer, bufferMemory, 0);
 }
 
 void Application::createSyncObjects() {
@@ -618,11 +564,9 @@ void Application::cleanupSwapChain() {
 		vkDestroyImageView(device, swapChainImageView, nullptr);
 	}
 	vkDestroySwapchainKHR(device, swapChain, nullptr);
-	for (size_t i = 0; i < swapChainImages.size(); i++) {
-		vkDestroyBuffer(device, uniformBuffers[i], nullptr);
-		vkFreeMemory(device, uniformBuffersMemory[i], nullptr);
+	for (size_t i = 0; i < uniformBuffers.size(); i++) {
+		VulkanMemoryManager::getInstance()->DestroyBuffer(uniformBuffers[i], uniformBuffersAllocations[i]);
 	}
-
 	vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 }
 
@@ -635,11 +579,9 @@ void Application::cleanupPipelineResources() const {
 
 void Application::cleanupImageResources() const {
 	vkDestroyImageView(device, colorImageView, nullptr);
-	vkDestroyImage(device, colorImage, nullptr);
-	vkFreeMemory(device, colorImageMemory, nullptr);
+	VulkanMemoryManager::getInstance()->DestroyImage(colorImage, colorImageMemory);
 	vkDestroyImageView(device, depthImageView, nullptr);
-	vkDestroyImage(device, depthImage, nullptr);
-	vkFreeMemory(device, depthImageMemory, nullptr);
+	VulkanMemoryManager::getInstance()->DestroyImage(depthImage, depthImageMemory);
 }
 
 void Application::createCommandPool() {
@@ -769,7 +711,8 @@ size_t Application::scoreDevice(vk::PhysicalDevice deviceToScore) {
 	vk::PhysicalDeviceFeatures deviceFeatures{};
 	deviceToScore.getProperties(&deviceProperties);
 	deviceToScore.getFeatures(&deviceFeatures);
-	size_t score{};
+	size_t
+			score{};
 	if (deviceProperties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu) score += 1000;
 	score += deviceProperties.limits.maxImageDimension2D;
 	// and so on...
@@ -882,17 +825,6 @@ Application::querySwapChainSupport(vk::PhysicalDevice deviceToQuery) {
 	return details;
 }
 
-uint32_t Application::findMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties) {
-	vk::PhysicalDeviceMemoryProperties memProperties;
-	physicalDevice.getMemoryProperties(&memProperties);
-	for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-		if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
-			return i;
-		}
-	}
-	throw std::runtime_error(NO_SUITABLE_MEMORY_MSG);
-}
-
 Application::QueueFamilyIndices Application::findQueueFamilies(vk::PhysicalDevice deviceToSearch) {
 	QueueFamilyIndices queueIndices;
 	uint32_t queueFamilyCount = 0;
@@ -946,15 +878,15 @@ void Application::initVulkanBeforePipeline() {
 	createSurface();
 	pickPhysicalDevice();
 	createLogicalDevice();
-	createGlobalVmaAllocator();
 	createSwapChain();
 	createImageViews();
 	createRenderPass();
 	createDescriptorSetLayout();
+	createCommandPool();
+	initGlobalVmaAllocator();
 }
 
 void Application::initVulkanAfterPipeline() {
-	createCommandPool();
 	createColorResources();
 	createDepthResources();
 	createFramebuffers();
@@ -969,11 +901,10 @@ void Application::initVulkanAfterPipeline() {
 	createDescriptorSets();
 	createCommandBuffers();
 	createSyncObjects();
-
 }
 
 void Application::createGraphicsPipelineFromDescriptions(vk::VertexInputBindingDescription &bindingDescription,
-                                                                 std::array<vk::VertexInputAttributeDescription, 3> &attributeDescriptions) {
+                                                         std::array<vk::VertexInputAttributeDescription, 3> &attributeDescriptions) {
 	auto vert{readFile("../shaders/sprvs/depth_vert.spv")};
 	auto frag{readFile("../shaders/sprvs/textured_frag.spv")};
 	auto verMod{createShaderModule(vert)};
@@ -1074,12 +1005,10 @@ void Application::processSceneObject(const aiScene *scene) {
 		}
 	}
 	cout << "There are now: " << indices.size() << " number of indices" << endl;
-
-
 }
 
 void Application::generateMipmaps(vk::Image image, vk::Format imageFormat, int32_t texWidth, int32_t texHeight,
-                                          uint32_t inMipLevels) {
+                                  uint32_t inMipLevels) {
 	// Check if image format supports linear blitting
 	vk::FormatProperties formatProperties;
 	physicalDevice.getFormatProperties(imageFormat, &formatProperties);
@@ -1087,7 +1016,6 @@ void Application::generateMipmaps(vk::Image image, vk::Format imageFormat, int32
 		throw std::runtime_error(TEXTURE_FORMAT_NOT_SUPPORT_BLITTING_MSG);
 	}
 	vk::CommandBuffer commandBuffer = beginSingleTimeCommands();
-
 	vk::ImageMemoryBarrier barrier({}, {}, {}, {}, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, image,
 	                               {vk::ImageAspectFlagBits::eColor, {}, 1, 0, 1});
 	int32_t mipWidth = texWidth;
@@ -1134,24 +1062,20 @@ vk::SampleCountFlagBits Application::getMaxUsableSampleCount() {
 	physicalDevice.getProperties(&physicalDeviceProperties);
 	vk::SampleCountFlags counts = physicalDeviceProperties.limits.framebufferColorSampleCounts &
 	                              physicalDeviceProperties.limits.framebufferDepthSampleCounts;
-
 	if (counts & vk::SampleCountFlagBits::e64) { return vk::SampleCountFlagBits::e64; }
 	if (counts & vk::SampleCountFlagBits::e32) { return vk::SampleCountFlagBits::e32; }
 	if (counts & vk::SampleCountFlagBits::e16) { return vk::SampleCountFlagBits::e16; }
 	if (counts & vk::SampleCountFlagBits::e8) { return vk::SampleCountFlagBits::e8; }
 	if (counts & vk::SampleCountFlagBits::e4) { return vk::SampleCountFlagBits::e4; }
 	if (counts & vk::SampleCountFlagBits::e2) { return vk::SampleCountFlagBits::e2; }
-
 	return vk::SampleCountFlagBits::e1;
 }
 
 void Application::createColorResources() {
-
 	vk::Format colorFormat = swapChainImageFormat;
-
 	createImage(swapChainExtent.width, swapChainExtent.height, 1, msaaSamples, colorFormat, vk::ImageTiling::eOptimal,
 	            vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment,
-	            vk::MemoryPropertyFlagBits::eDeviceLocal, colorImage, colorImageMemory);
+	            VMA_MEMORY_USAGE_GPU_ONLY, colorImage, colorImageMemory);
 	colorImageView = createImageView(colorImage, colorFormat, vk::ImageAspectFlagBits::eColor, 1);
 }
 
@@ -1171,6 +1095,12 @@ Application::Application()
 				  4, 5, 6, 6, 7, 4} {
 }
 
-void Application::createGlobalVmaAllocator() {
-
+void Application::initGlobalVmaAllocator() {
+	VulkanMemoryManager::Init(device, physicalDevice, commandPool, graphicsQueue);
 }
+
+void Application::destroyGlobalAllocator() {
+	VulkanMemoryManager::Destroy();
+}
+
+

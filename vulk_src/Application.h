@@ -1,13 +1,11 @@
-#include <utility>
-
-#include <utility>
-
 //
 // Created by alexa on 5/18/2019.
 //
 
 #ifndef DNDIDEA_TRIANGLEAPPLICATION_H
 #define DNDIDEA_TRIANGLEAPPLICATION_H
+
+
 
 static const char *const COMMAND_POOL_FAIL_CREATE_MSG = "Failed to create command pool!";
 
@@ -33,33 +31,8 @@ static const char *const PIPELINE_CREATE_FAIL_MSG = "Failed to create graphics p
 
 static const char *const TEXTURE_FORMAT_NOT_SUPPORT_BLITTING_MSG = "Texture image format does not support linear blitting!";
 
+#include "VulkanMemoryManager.h"
 #include "Vertex.h"
-#include "Model.h"
-#define NOMINMAX
-#include <GLFW/glfw3.h>
-#include <optional>
-#include <assimp/DefaultIOStream.h>
-#include <assimp/Importer.hpp>
-#include <assimp/DefaultLogger.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
-#include <glm/gtc/matrix_transform.hpp>
-#include <stb/stb_image.h>
-#include <algorithm>
-#include <vk_mem_alloc.h>
-#include <limits>
-#include <numeric>
-#include <set>
-#include <string>
-#include <iterator>
-#include <fstream>
-#include <array>
-#include <stdexcept>
-#include <chrono>
-
-// NOTE: This suggests some kind of singleton
-//VmaAllocator globalAllocator{};
-
 
 struct UniformBufferObject {
 	alignas(16) glm::mat4 model;
@@ -108,23 +81,23 @@ private:
 	std::vector<Vertex> vertices{};
 	std::vector<uint32_t> indices{};
 	vk::Buffer vertexBuffer{};
-	vk::DeviceMemory vertexBufferMemory{};
+	VmaAllocation vertexBufferAllocation{};
 	vk::Buffer indexBuffer{};
-	vk::DeviceMemory indexBufferMemory{};
+	VmaAllocation indexBufferAllocation{};
 	uint32_t mipLevels{}; //for texture
 	vk::Image textureImage{};
-	vk::DeviceMemory textureImageMemory{};
+	VmaAllocation textureImageMemory{};
 	vk::ImageView textureImageView{};
 	vk::Sampler textureSampler{};
 	vk::Image depthImage{};
-	vk::DeviceMemory depthImageMemory{};
+	VmaAllocation depthImageMemory{};
 	vk::ImageView depthImageView{};
 	vk::Image colorImage{};
-	vk::DeviceMemory colorImageMemory{};
+	VmaAllocation colorImageMemory{};
 	vk::ImageView colorImageView{};
 	vk::SampleCountFlagBits msaaSamples = vk::SampleCountFlagBits::e1;
 	std::vector<vk::Buffer> uniformBuffers{};
-	std::vector<vk::DeviceMemory> uniformBuffersMemory{};
+	std::vector<VmaAllocation> uniformBuffersAllocations{};
 	vk::DescriptorPool descriptorPool{};
 	// Done so that validation can be toggled in the future
 	//	static const bool enableValidationLayers = true;
@@ -183,7 +156,7 @@ private:
 		createGraphicsPipelineFromDescriptions(bindingDescription, attributeDescriptions);
 	}
 
-	void createGlobalVmaAllocator();
+	void initGlobalVmaAllocator();
 
 	void initVulkanAfterPipeline();
 
@@ -206,8 +179,6 @@ private:
 	void createDescriptorSetLayout();
 
 	QueueFamilyIndices findQueueFamilies(vk::PhysicalDevice device);
-
-	uint32_t findMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties);
 
 	SwapChainSupportDetails querySwapChainSupport(vk::PhysicalDevice device);
 
@@ -232,6 +203,8 @@ private:
 
 	void createFramebuffers();
 
+	void destroyGlobalAllocator();
+
 	void createCommandPool();
 
 	void cleanupSwapChain();
@@ -242,11 +215,7 @@ private:
 
 	void createSyncObjects();
 
-	void createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties,
-	                  vk::Buffer &buffer,
-	                  vk::DeviceMemory &bufferMemory);
 
-	void copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size);
 
 	void transitionImageLayout(vk::Image image, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout,
 	                           uint32_t mipLevels);
@@ -266,11 +235,11 @@ private:
 	void createColorResources();
 
 	void
-	createImage(uint32_t width, uint32_t height, uint32_t mipLevels, vk::SampleCountFlagBits numSamples,
+	createImage(uint32_t width, uint32_t height, uint32_t imageMipLevels, vk::SampleCountFlagBits numSamples,
 	            vk::Format format,
 	            vk::ImageTiling tiling,
 	            vk::ImageUsageFlags usage,
-	            vk::MemoryPropertyFlags properties, vk::Image &image, vk::DeviceMemory &imageMemory);
+	            VmaMemoryUsage memUsage, vk::Image &image, VmaAllocation &imageMemory);
 
 	vk::CommandBuffer beginSingleTimeCommands();
 
@@ -328,6 +297,8 @@ private:
 	vk::ShaderModule createShaderModule(const std::vector<char> &code);
 
 	void cleanupImageResources() const;
+
+	std::tuple<vk::Buffer, VmaAllocation> initializeStagingBuffer(void *data, vk::DeviceSize dataSize);
 
 	void cleanupPipelineResources() const;
 };
