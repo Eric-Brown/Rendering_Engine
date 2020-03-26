@@ -9,8 +9,8 @@ if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
 endif ()
 # Set value to suppress the CMake warnings that vcpkg will emit while in VS2019
 set(VCPKG_SUPPRESS_INSTALLED_LIBRARIES_WARNING TRUE)
-set(_NO_DEBUG_HEAP 1)
-set(_ITERATOR_DEBUG_LEVEL 0)
+#set(_NO_DEBUG_HEAP 1)
+#set(_ITERATOR_DEBUG_LEVEL 0)
 
 # Import in HunterGate file for using Hunter
 include("cmake/HunterGate.cmake")

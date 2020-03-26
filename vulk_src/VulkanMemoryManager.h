@@ -39,7 +39,8 @@ public:
 		createBuffer(bufferSize, vk::BufferUsageFlagBits::eTransferDst | bufferType, VMA_MEMORY_USAGE_GPU_ONLY,
 		             bufferToReturn, allocationToReturn);
 		copyBuffer(stagingBuffer, bufferToReturn, bufferSize);
-		vmaDestroyBuffer(allocator, stagingBuffer, stagingBufferAllocation);
+		DestroyBuffer(stagingBuffer, stagingBufferAllocation);
+		//vmaDestroyBuffer(allocator, stagingBuffer, stagingBufferAllocation);
 		return std::make_tuple(bufferToReturn, allocationToReturn);
 	}
 

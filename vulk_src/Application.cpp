@@ -81,6 +81,7 @@ void Application::cleanup() {
 	VulkanMemoryManager::getInstance()->DestroyImage(textureImage, textureImageMemory);
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
 	VulkanMemoryManager::getInstance()->DestroyBuffer(indexBuffer, indexBufferAllocation);
+	VulkanMemoryManager::getInstance()->DestroyBuffer(vertexBuffer, vertexBufferAllocation);
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 		device.destroySemaphore(renderFinishedSemaphores[i]);
 		device.destroySemaphore(imageAvailableSemaphores[i]);
@@ -445,7 +446,6 @@ void Application::createDescriptorSetLayout() {
 
 
 void Application::createIndexBuffer() {
-	std::cout << "index count when creating buffer: " << indices.size() << std::endl;
 	auto[buffer, allocation] =VulkanMemoryManager::getInstance()->createBufferTypeFromVector(indices,
 	                                                                                         vk::BufferUsageFlagBits::eIndexBuffer);
 	indexBuffer = buffer;
@@ -453,8 +453,6 @@ void Application::createIndexBuffer() {
 }
 
 void Application::createVertexBuffer() {
-	std::cout << "I have " << vertices.size() << " vertices" << std::endl;
-	std::cout << "Total stride: " << sizeof(Vertex) << std::endl;
 	auto[buffer, allocation] = VulkanMemoryManager::getInstance()
 			->createBufferTypeFromVector<Vertex>(vertices, vk::BufferUsageFlagBits::eVertexBuffer);
 	vertexBuffer = buffer;
@@ -566,7 +564,7 @@ void Application::cleanupSwapChain() {
 		vkDestroyImageView(device, swapChainImageView, nullptr);
 	}
 	vkDestroySwapchainKHR(device, swapChain, nullptr);
-	for (size_t i = 0; i < swapChainImages.size(); i++) {
+	for (size_t i = 0; i < uniformBuffers.size(); i++) {
 		VulkanMemoryManager::getInstance()->DestroyBuffer(uniformBuffers[i], uniformBuffersAllocations[i]);
 	}
 	vkDestroyDescriptorPool(device, descriptorPool, nullptr);
