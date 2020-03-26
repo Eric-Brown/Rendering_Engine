@@ -78,10 +78,9 @@ void Application::cleanup() {
 	cleanupSwapChain();
 	vkDestroySampler(device, textureSampler, nullptr);
 	vkDestroyImageView(device, textureImageView, nullptr);
-	vmaDestroyImage(globalAllocator, textureImage, textureImageMemory);
+	VulkanMemoryManager::getInstance()->DestroyImage(textureImage, textureImageMemory);
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
-	vmaDestroyBuffer(globalAllocator, indexBuffer, indexBufferAllocation);
-	vmaDestroyBuffer(globalAllocator, vertexBuffer, vertexBufferAllocation);
+	VulkanMemoryManager::getInstance()->DestroyBuffer(indexBuffer, indexBufferAllocation);
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 		device.destroySemaphore(renderFinishedSemaphores[i]);
 		device.destroySemaphore(imageAvailableSemaphores[i]);
