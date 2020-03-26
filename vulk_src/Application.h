@@ -1,13 +1,11 @@
-#include <utility>
-
-#include <utility>
-
 //
 // Created by alexa on 5/18/2019.
 //
 
 #ifndef DNDIDEA_TRIANGLEAPPLICATION_H
 #define DNDIDEA_TRIANGLEAPPLICATION_H
+
+
 
 static const char *const COMMAND_POOL_FAIL_CREATE_MSG = "Failed to create command pool!";
 
@@ -35,31 +33,6 @@ static const char *const TEXTURE_FORMAT_NOT_SUPPORT_BLITTING_MSG = "Texture imag
 
 #include "VulkanMemoryManager.h"
 #include "Vertex.h"
-#include "Model.h"
-
-#define NOMINMAX
-
-#include <GLFW/glfw3.h>
-#include <optional>
-#include <assimp/DefaultIOStream.h>
-#include <assimp/Importer.hpp>
-#include <assimp/DefaultLogger.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
-#include <glm/gtc/matrix_transform.hpp>
-#include <stb/stb_image.h>
-#include <algorithm>
-#include <vk_mem_alloc.h>
-#include <limits>
-#include <numeric>
-#include <set>
-#include <string>
-#include <tuple>
-#include <iterator>
-#include <fstream>
-#include <array>
-#include <stdexcept>
-#include <chrono>
 
 struct UniformBufferObject {
 	alignas(16) glm::mat4 model;

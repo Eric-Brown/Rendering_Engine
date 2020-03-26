@@ -16,20 +16,6 @@ std::tuple<vk::Buffer, VmaAllocation> VulkanMemoryManager::initializeStagingBuff
 	return std::make_tuple(stagingBuffer, stagingBufferAllocation);
 }
 
-template<typename T>
-std::tuple<vk::Buffer, VmaAllocation>
-VulkanMemoryManager::createBufferTypeFromVector(std::vector<T> thing, vk::BufferUsageFlags bufferType) {
-	vk::DeviceSize bufferSize = sizeof(T) * thing.size();
-	auto[stagingBuffer, stagingBufferAllocation] = initializeStagingBuffer(thing.data(), bufferSize);
-	vk::Buffer bufferToReturn;
-	VmaAllocation allocationToReturn;
-	createBuffer(bufferSize, vk::BufferUsageFlagBits::eTransferDst | bufferType, VMA_MEMORY_USAGE_GPU_ONLY,
-	             bufferToReturn, allocationToReturn);
-	copyBuffer(stagingBuffer, bufferToReturn, bufferSize);
-	vmaDestroyBuffer(globalAllocator, stagingBuffer, stagingBufferAllocation);
-	return std::make_tuple(bufferToReturn, allocationToReturn);
-}
-
 void
 VulkanMemoryManager::createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage,
                                   vk::Buffer &buffer, VmaAllocation &bufferAllocation) {

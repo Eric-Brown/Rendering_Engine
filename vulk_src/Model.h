@@ -6,7 +6,7 @@
 #define DNDIDEA_MODEL_H
 
 
-#include "Vertex.h"
+
 #include <vector>
 #include <glm/glm.hpp>
 #include <assimp/DefaultIOStream.h>

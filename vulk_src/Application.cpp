@@ -446,19 +446,19 @@ void Application::createDescriptorSetLayout() {
 
 void Application::createIndexBuffer() {
 	std::cout << "index count when creating buffer: " << indices.size() << std::endl;
-	auto[buffer, allocation] =VulkanMemoryManager::getInstance()
-			->createBufferTypeFromVector(indices, vk::BufferUsageFlagBits::eIndexBuffer);
-	indexBuffer = buffer;
-	indexBufferAllocation = allocation;
+	auto[buffer, allocation] =VulkanMemoryManager::getInstance()->createBufferTypeFromVector(indices,
+	                                                                                         vk::BufferUsageFlagBits::eIndexBuffer);
+//	indexBuffer = buffer;
+//	indexBufferAllocation = allocation;
 }
 
 void Application::createVertexBuffer() {
 	std::cout << "I have " << vertices.size() << " vertices" << std::endl;
 	std::cout << "Total stride: " << sizeof(Vertex) << std::endl;
-	auto[buffer, allocation] = VulkanMemoryManager::getInstance()
-			->createBufferTypeFromVector(vertices, vk::BufferUsageFlagBits::eVertexBuffer);
-	vertexBuffer = buffer;
-	vertexBufferAllocation = allocation;
+//	auto[buffer, allocation] = VulkanMemoryManager::getInstance()
+//			->createBufferTypeFromVector<Vertex>(vertices, vk::BufferUsageFlagBits::eVertexBuffer);
+//	vertexBuffer = buffer;
+//	vertexBufferAllocation = allocation;
 }
 
 void Application::copyBufferToImage(vk::Buffer buffer, vk::Image image, uint32_t width, uint32_t height) {
@@ -714,7 +714,7 @@ size_t Application::scoreDevice(vk::PhysicalDevice deviceToScore) {
 	deviceToScore.getProperties(&deviceProperties);
 	deviceToScore.getFeatures(&deviceFeatures);
 	size_t
-	score{};
+			score{};
 	if (deviceProperties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu) score += 1000;
 	score += deviceProperties.limits.maxImageDimension2D;
 	// and so on...

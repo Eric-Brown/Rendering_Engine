@@ -5,9 +5,7 @@
 #ifndef DNDIDEA_VULKANMEMORYMANAGER_H
 #define DNDIDEA_VULKANMEMORYMANAGER_H
 
-
-#include <vk_mem_alloc.h>
-#include <tuple>
+#include "ExternalHeaders.h"
 
 class VulkanMemoryManager {
 public:
@@ -32,18 +30,28 @@ public:
 	createImage(VkImageCreateInfo imageInfo, VmaAllocationCreateInfo allocationCreateInfo);
 
 	template<typename T>
-	std::tuple<vk::Buffer, VmaAllocation> createBufferTypeFromVector(std::vector<T> thing,
-	                                                                 vk::BufferUsageFlags bufferType);
+	std::tuple<vk::Buffer, VmaAllocation>
+	createBufferTypeFromVector(std::vector<T> thing, vk::BufferUsageFlags bufferType) {
+		vk::DeviceSize bufferSize = sizeof(T) * thing.size();
+		auto[stagingBuffer, stagingBufferAllocation] = initializeStagingBuffer(thing.data(), bufferSize);
+		vk::Buffer bufferToReturn;
+		VmaAllocation allocationToReturn;
+		createBuffer(bufferSize, vk::BufferUsageFlagBits::eTransferDst | bufferType, VMA_MEMORY_USAGE_GPU_ONLY,
+		             bufferToReturn, allocationToReturn);
+//		copyBuffer(stagingBuffer, bufferToReturn, bufferSize); ERROR HERE
+		vmaDestroyBuffer(allocator, stagingBuffer, stagingBufferAllocation);
+		return std::make_tuple(bufferToReturn, allocationToReturn);
+	}
 
 private:
 	VulkanMemoryManager(vk::Device device, vk::PhysicalDevice physicalDevice);
 
-	static VulkanMemoryManager *vmmInstance;
+	static inline VulkanMemoryManager *vmmInstance{};
 	VmaAllocator allocator;
 
 //	void copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size);
 
 };
 
-
+//VulkanMemoryManager *VulkanMemoryManager::vmmInstance{nullptr};
 #endif //DNDIDEA_VULKANMEMORYMANAGER_H
