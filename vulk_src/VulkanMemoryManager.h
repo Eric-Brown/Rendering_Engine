@@ -51,9 +51,11 @@ private:
 	vk::Device device;
 	vk::PhysicalDevice physicalDevice;
 	vk::CommandPool commandPool;
+	vk::Queue graphicsQueue;
 
 	void copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size);
-
+	vk::CommandBuffer beginSingleTimeCommands();
+	void endSingleTimeCommands(vk::CommandBuffer commandBuffer);
 };
 
 #endif //DNDIDEA_VULKANMEMORYMANAGER_H

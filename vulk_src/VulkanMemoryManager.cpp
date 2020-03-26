@@ -79,3 +79,20 @@ void VulkanMemoryManager::copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer,
 	commandBuffer.copyBuffer(srcBuffer, dstBuffer, 1, &copyRegion);
 	endSingleTimeCommands(commandBuffer);
 }
+
+void VulkanMemoryManager::endSingleTimeCommands(vk::CommandBuffer commandBuffer) {
+	commandBuffer.end();
+	vk::SubmitInfo submitInfo{{}, {}, {}, 1, &commandBuffer};
+	graphicsQueue.submit(1, &submitInfo, {});
+	graphicsQueue.waitIdle();
+	device.freeCommandBuffers(commandPool, 1, &commandBuffer);
+}
+
+vk::CommandBuffer VulkanMemoryManager::beginSingleTimeCommands() {
+	vk::CommandBufferAllocateInfo allocInfo{commandPool, vk::CommandBufferLevel::ePrimary, 1};
+	auto buffers{device.allocateCommandBuffers(allocInfo)};
+	vk::CommandBuffer commandBuffer{buffers[0]};
+	vk::CommandBufferBeginInfo beginInfo{vk::CommandBufferUsageFlagBits::eOneTimeSubmit};
+	commandBuffer.begin(beginInfo);
+	return commandBuffer;
+}
