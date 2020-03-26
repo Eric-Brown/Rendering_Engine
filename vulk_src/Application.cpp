@@ -193,10 +193,8 @@ void Application::updateUniformBuffer(uint32_t currentImage) {
 	ubo.proj = glm::perspective(glm::radians(90.0f), swapChainExtent.width / (float) swapChainExtent.height, 0.1f,
 	                            40.0f);
 	ubo.proj[1][1] *= -1;
-	void *data;
-	vmaMapMemory(globalAllocator, uniformBuffersAllocations[currentImage], &data);
-	memcpy(data, &ubo, sizeof(ubo));
-	vmaUnmapMemory(globalAllocator, uniformBuffersAllocations[currentImage]);
+	VulkanMemoryManager::getInstance()
+			->CopyDataToAllocation(&ubo, sizeof(ubo), uniformBuffersAllocations[currentImage]);
 }
 
 vk::Bool32 Application::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
