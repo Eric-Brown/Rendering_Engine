@@ -360,7 +360,7 @@ void Application::createTextureImage() {
 	                      vk::ImageLayout::eTransferDstOptimal, mipLevels);
 	copyBufferToImage(stagingBuffer, textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
 	generateMipmaps(textureImage, vk::Format::eR8G8B8A8Unorm, texWidth, texHeight, mipLevels);
-	vmaDestroyBuffer(globalAllocator, stagingBuffer, stagingBufferMemory);
+	VulkanMemoryManager::getInstance()->DestroyBuffer(stagingBuffer, stagingBufferMemory);
 }
 
 void Application::endSingleTimeCommands(vk::CommandBuffer commandBuffer) {
