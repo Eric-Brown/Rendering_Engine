@@ -29,7 +29,7 @@ static const char *const PIPELINE_LAYOUT_CREATE_FAIL_MSG = "Failed to create pip
 
 static const char *const PIPELINE_CREATE_FAIL_MSG = "Failed to create graphics pipeline!";
 
-static const char *const TEXTURE_FORMAT_NOT_SUPPORT_BLITTING_MSG = "Texture image format does not support linear blitting!";
+
 
 #include "VulkanMemoryManager.h"
 #include "Vertex.h"
@@ -79,11 +79,6 @@ private:
 	std::vector<vk::Fence> inFlightFences{};
 	size_t currentFrame = 0;
 	bool framebufferResized{false};
-	uint32_t mipLevels{}; //for texture
-	vk::Image textureImage{};
-	VmaAllocation textureImageMemory{};
-	vk::ImageView textureImageView{};
-	vk::Sampler textureSampler{};
 	vk::Image depthImage{};
 	VmaAllocation depthImageMemory{};
 	vk::ImageView depthImageView{};
