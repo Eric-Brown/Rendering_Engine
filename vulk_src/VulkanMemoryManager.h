@@ -6,8 +6,9 @@
 #define DNDIDEA_VULKANMEMORYMANAGER_H
 
 #include "ExternalHeaders.h"
-
-class VulkanMemoryManager {
+static const char *const TEXTURE_FORMAT_NOT_SUPPORT_BLITTING_MSG = "Texture image format does not support linear blitting!";
+class VulkanMemoryManager
+{
 public:
   static void Init(vk::Device device, vk::PhysicalDevice physDevice,
                    vk::CommandPool pool, vk::Queue queue);
@@ -19,6 +20,10 @@ public:
   void DestroyImage(vk::Image img, VmaAllocation imgMemory);
 
   void DestroyBuffer(vk::Buffer buff, VmaAllocation buffAllocation);
+
+  void DestroyImageView(vk::ImageView view);
+  
+  void DestroySampler(vk::Sampler sampler);
 
   std::tuple<vk::Buffer, VmaAllocation>
   initializeStagingBuffer(void *data, size_t dataSize);
@@ -34,10 +39,15 @@ public:
   createImage(VkImageCreateInfo imageInfo,
               VmaAllocationCreateInfo allocationCreateInfo);
 
+  vk::ImageView CreateImageView(vk::ImageViewCreateInfo info);
+
+  vk::Sampler CreateImageSampler(vk::SamplerCreateInfo info);
+
   template <typename T>
   std::tuple<vk::Buffer, VmaAllocation>
   createBufferTypeFromVector(std::vector<T> thing,
-                             vk::BufferUsageFlags bufferType) {
+                             vk::BufferUsageFlags bufferType)
+  {
     vk::DeviceSize bufferSize = sizeof(T) * thing.size();
     auto [stagingBuffer, stagingBufferAllocation] =
         initializeStagingBuffer(thing.data(), bufferSize);
@@ -52,6 +62,8 @@ public:
   }
 
   vk::DeviceSize GetAllocationSize(VmaAllocation allocation);
+
+  std::tuple<vk::Image, VmaAllocation> CreateImageFromData(void *data, vk::DeviceSize size, vk::ImageCreateInfo info, VmaMemoryUsage usage);
 
 private:
   VulkanMemoryManager(vk::Device device, vk::PhysicalDevice physDevice,
@@ -69,6 +81,13 @@ private:
   vk::CommandBuffer beginSingleTimeCommands();
 
   void endSingleTimeCommands(vk::CommandBuffer commandBuffer);
+
+  void transitionImageLayout(vk::Image image, vk::Format format, vk::ImageLayout oldLayout,
+                             vk::ImageLayout newLayout, uint32_t inMipLevels);
+
+  void copyBufferToImage(vk::Buffer buffer, vk::Image image, vk::ImageCreateInfo info);
+  void generateMipmaps(vk::Image image, vk::ImageCreateInfo info);
+  bool hasStencilComponent(vk::Format format);
 };
 
 #endif // DNDIDEA_VULKANMEMORYMANAGER_H
