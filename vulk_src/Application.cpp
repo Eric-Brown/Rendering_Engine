@@ -474,7 +474,7 @@ void Application::createCommandBuffers()
 	{
 		throw runtime_error("failed to allocate command buffers!");
 	}
-	for (auto i{0}; i < swapChainFramebuffers.size(); i++)
+	for (size_t i{0}; i < swapChainFramebuffers.size(); i++)
 	{
 		vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
 		commandBuffers[i].begin(beginInfo);

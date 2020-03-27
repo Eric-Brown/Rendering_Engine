@@ -44,7 +44,7 @@ public:
 	const vk::Sampler GetTextureSampler();
 	const vk::ImageView GetTextureView();
 
-	const uint32_t GetIndexCount();
+	 uint32_t GetIndexCount();
 
 	const glm::mat4& GetModelTransform();
 

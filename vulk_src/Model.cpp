@@ -16,7 +16,7 @@ const std::tuple<vk::Image, VmaAllocation> &Model::GetTextureBuffer()
 const vk::Sampler Model::GetTextureSampler() { return textureSampler; }
 const vk::ImageView Model::GetTextureView() { return textureImageView; }
 
-const uint32_t Model::GetIndexCount()
+ uint32_t Model::GetIndexCount()
 {
 	return static_cast<uint32_t>(meshIndexes.size());
 }
