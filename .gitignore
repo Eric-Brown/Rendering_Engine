@@ -1,22 +1,19 @@
+# Ignore IDE Settings Files
 .idea
+.vs
+.vscode
+
+# Ignore cmake build files
 cmake-build-debug
 cmake-build-release
+build
+out
+
+# Ignore intermediary shader compilations
 *.spv
 
-resources/models/debug_cube.blend
+# Ignore blender files
+*.blend
 
-resources/models/debug_cube.mtl
-
-resources/models/debug_cube.obj
-
-resources/models/plane.mtl
-
-resources/models/plane.obj
-
-resources/textures/orange.jpg
-
-vkvia.html
-
-out/
-
-.vs/
+# Ignore vkvia.exe (from vulkan sdk) output.
+vkvia.html\

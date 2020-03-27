@@ -5,27 +5,63 @@
 #ifndef DNDIDEA_MODEL_H
 #define DNDIDEA_MODEL_H
 
-
+#include "ExternalHeaders.h"
+#include "VulkanMemoryManager.h"
 #include "Vertex.h"
-#include <vector>
-#include <glm/glm.hpp>
 
 class Model {
 private:
+	std::string textureFileName{};
 	std::vector<Vertex> mesh{};
-	std::vector<uint32_t> indices{};
-	glm::mat4 model_transform{1.0f};
+	std::vector<uint32_t> meshIndexes{};
+	glm::mat4 model_transform{ 1.0f };
+	std::tuple<vk::Buffer, VmaAllocation> vertexBuffer{};
+	std::tuple<vk::Buffer, VmaAllocation> indexBuffer{};
+	std::tuple<vk::Image, VmaAllocation> textureBuffer{};
+	vk::ImageView textureImageView{};
+	vk::Sampler textureSampler{};
+	uint32_t mipLevels{};
+	//need:
+	   // sampler
+	// view
+	// image
+	// transition
+	// mipmaps
 public:
-//	Model(const char* fName);
-//	Model(const std::string fName);
-	Model(std::vector<Vertex> &preloadedMesh, std::vector<uint32_t> preloadedMeshIndices);
 
-	const std::vector<Vertex> &GetMesh();
+	Model(const std::string fName);
 
-	const std::vector<uint32_t> &GetIndices();
+	Model(const std::string fName, const std::string texFName);
 
-	const glm::mat4 &GetModelTransform();
+	~Model() noexcept;
+
+	const std::tuple<vk::Buffer, VmaAllocation>& GetMeshBuffer();
+
+	const std::tuple<vk::Buffer, VmaAllocation>& GetIndicesBuffer();
+
+	const std::tuple<vk::Image, VmaAllocation>& GetTextureBuffer();
+
+	const vk::Sampler GetTextureSampler();
+	const vk::ImageView GetTextureView();
+
+	const uint32_t GetIndexCount();
+
+	const glm::mat4& GetModelTransform();
+
+	void loadDataToGPU();
+
+private:
+	bool readModelFile(const std::string& pFile);
+
+	void processSceneObject(const aiScene* scene);
+
+	void createTextureImage();
+	vk::ImageView createImageView(vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags,
+		uint32_t inMipLevels);
+	void createTextureImageView();
+	void createTextureSampler();
+	void loadImageDataToGPU();
+	void DestroyBufferIfExists(std::tuple<vk::Buffer, VmaAllocation> buffer) noexcept;
 };
 
-
-#endif //DNDIDEA_MODEL_H
+#endif // DNDIDEA_MODEL_H
