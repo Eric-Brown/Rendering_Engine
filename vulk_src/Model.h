@@ -11,31 +11,57 @@
 
 class Model {
 private:
-  std::vector<Vertex> mesh{};
-  std::vector<uint32_t> meshIndexes{};
-  glm::mat4 model_transform{1.0f};
- std::tuple<vk::Buffer, VmaAllocation> vertexBuffer{};
- std::tuple<vk::Buffer, VmaAllocation> indexBuffer{};
+	std::string textureFileName{};
+	std::vector<Vertex> mesh{};
+	std::vector<uint32_t> meshIndexes{};
+	glm::mat4 model_transform{ 1.0f };
+	std::tuple<vk::Buffer, VmaAllocation> vertexBuffer{};
+	std::tuple<vk::Buffer, VmaAllocation> indexBuffer{};
+	std::tuple<vk::Image, VmaAllocation> textureBuffer{};
+	vk::ImageView textureImageView{};
+	vk::Sampler textureSampler{};
+	uint32_t mipLevels{};
+	//need:
+	   // sampler
+	// view
+	// image
+	// transition
+	// mipmaps
 public:
 
-  Model(const std::string fName);
+	Model(const std::string fName);
 
-  ~Model() noexcept;
+	Model(const std::string fName, const std::string texFName);
 
-  const std::tuple<vk::Buffer, VmaAllocation> &GetMeshBuffer();
+	~Model() noexcept;
 
-  const std::tuple<vk::Buffer, VmaAllocation> &GetIndicesBuffer();
+	const std::tuple<vk::Buffer, VmaAllocation>& GetMeshBuffer();
 
-  const uint32_t GetIndexCount();
+	const std::tuple<vk::Buffer, VmaAllocation>& GetIndicesBuffer();
 
-  const glm::mat4 &GetModelTransform();
+	const std::tuple<vk::Image, VmaAllocation>& GetTextureBuffer();
 
-  void loadDataToGPU();
+	const vk::Sampler GetTextureSampler();
+	const vk::ImageView GetTextureView();
+
+	const uint32_t GetIndexCount();
+
+	const glm::mat4& GetModelTransform();
+
+	void loadDataToGPU();
 
 private:
-  bool readModelFile(const std::string &pFile);
+	bool readModelFile(const std::string& pFile);
 
-  void processSceneObject(const aiScene *scene);
+	void processSceneObject(const aiScene* scene);
+
+	void createTextureImage();
+	vk::ImageView createImageView(vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags,
+		uint32_t inMipLevels);
+	void createTextureImageView();
+	void createTextureSampler();
+	void loadImageDataToGPU();
+	void DestroyBufferIfExists(std::tuple<vk::Buffer, VmaAllocation> buffer) noexcept;
 };
 
 #endif // DNDIDEA_MODEL_H
