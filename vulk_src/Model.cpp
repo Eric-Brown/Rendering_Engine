@@ -117,7 +117,7 @@ void Model::createTextureImage()
 	{
 		throw std::runtime_error("failed to load texture image!");
 	}
-	vk::ImageCreateInfo info({}, vk::ImageType::e2D, vk::Format::eR8G8B8A8Unorm, vk::Extent3D{texWidth, texHeight, 1}, mipLevels, 1, vk::SampleCountFlagBits::e1, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::SharingMode::eExclusive, {}, {}, {});
+	vk::ImageCreateInfo info({}, vk::ImageType::e2D, vk::Format::eR8G8B8A8Unorm, vk::Extent3D{static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight), 1}, mipLevels, 1, vk::SampleCountFlagBits::e1, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::SharingMode::eExclusive, {}, {}, {});
 	textureBuffer = VulkanMemoryManager::getInstance()->CreateImageFromData(pixels, imageSize, info, VMA_MEMORY_USAGE_GPU_ONLY);
 	stbi_image_free(pixels);
 }

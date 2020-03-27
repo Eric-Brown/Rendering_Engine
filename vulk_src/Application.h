@@ -232,14 +232,8 @@ private:
 
 	void endSingleTimeCommands(vk::CommandBuffer commandBuffer);
 
-	void createTextureImage();
-
 	vk::ImageView
 	createImageView(vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags, uint32_t mipLevels);
-
-	void createTextureImageView();
-
-	void createTextureSampler();
 
 	bool hasStencilComponent(vk::Format format);
 
@@ -260,7 +254,7 @@ private:
 
 	void validateExtensions(const std::vector<const char *> &toValidate) const;
 
-	std::vector<const char *> getRequiredExtensions() const;
+	[[nodiscard]] std::vector<const char *> getRequiredExtensions() const;
 
 	void validateLayerSupport();
 

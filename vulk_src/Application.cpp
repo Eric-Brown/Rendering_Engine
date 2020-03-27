@@ -884,9 +884,6 @@ void Application::initVulkanAfterPipeline()
 	createColorResources();
 	createDepthResources();
 	createFramebuffers();
-	createTextureImage();
-	createTextureImageView();
-	createTextureSampler();
 	modelHandle = std::make_unique<Model>("../resources/models/chalet.obj", "../resources/textures/chalet.jpg");
 	modelHandle->loadDataToGPU();
 	createUniformBuffers();
