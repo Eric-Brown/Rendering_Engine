@@ -5,7 +5,7 @@
       "project": "CMakeLists.txt",
       "projectTarget": "Vulk_Main.exe (vulk_src\\Vulk_Main.exe)",
       "name": "Vulk_Main.exe (vulk_src\\Vulk_Main.exe)",
-      "currentDir": "C:\\Users\\alexa\\Documents\\Programming_Files\\CPP Projects\\DnDIdea\\vulk_src"
+      "currentDir": "${workspaceRoot}\\vulk_src"
     }
   ],
   "defaults": {},
