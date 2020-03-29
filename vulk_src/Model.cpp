@@ -16,7 +16,7 @@ const std::tuple<vk::Image, VmaAllocation> &Model::GetTextureBuffer()
 const vk::Sampler Model::GetTextureSampler() { return textureSampler; }
 const vk::ImageView Model::GetTextureView() { return textureImageView; }
 
- uint32_t Model::GetIndexCount()
+uint32_t Model::GetIndexCount()
 {
 	return static_cast<uint32_t>(meshIndexes.size());
 }
@@ -56,16 +56,14 @@ void Model::processSceneObject(const aiScene *scene)
 	cout << "Root has " << root->mNumChildren << " children." << endl;
 	cout << "Root also has: " << root->mNumMeshes << " meshes associated with it."
 		 << endl;
+	//set correctly here for now
 	aiMesh *pAiMesh{scene->mMeshes[0]};
-	if (root->mNumChildren)
+	for (size_t i{0}; i < root->mNumChildren; i++)
 	{
-		cout << "Child of root:" << endl;
-		auto child = root->mChildren[0];
-		cout << "has " << root->mChildren[0]->mNumChildren << " amount of children"
-			 << endl;
-		cout << "Child has: " << child->mNumMeshes << " meshes associated with it."
-			 << endl;
-		pAiMesh = scene->mMeshes[child->mMeshes[0]];
+		if (root->mChildren[i]->mNumMeshes)
+		{
+			//load meshes...
+		}
 	}
 	cout << "There are: " << scene->mNumMaterials << " materials" << endl;
 	if (pAiMesh->HasTextureCoords(0))
@@ -107,6 +105,23 @@ void Model::processSceneObject(const aiScene *scene)
 		 << endl;
 }
 
+const glm::mat4 Model::GetModelMatrix()
+{
+	return model_transform;
+}
+
+void Model::ScaleModel(glm::vec3 delta)
+{
+	glm::scale(model_transform, delta);
+}
+void Model::TranslateModel(glm::vec3 delta)
+{
+	glm::translate(model_transform, delta);
+}
+void Model::RotateModel(glm::vec3 axis, float theta)
+{
+	glm::rotate(model_transform, theta, axis)
+}
 void Model::createTextureImage()
 {
 	int texWidth, texHeight, texChannels;

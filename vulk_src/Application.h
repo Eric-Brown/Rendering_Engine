@@ -5,8 +5,6 @@
 #ifndef DNDIDEA_TRIANGLEAPPLICATION_H
 #define DNDIDEA_TRIANGLEAPPLICATION_H
 
-
-
 static const char *const COMMAND_POOL_FAIL_CREATE_MSG = "Failed to create command pool!";
 
 static const char *const FRAMEBUFFER_CREATE_FAIL_MSG = "Failed to create framebuffer";
@@ -29,27 +27,25 @@ static const char *const PIPELINE_LAYOUT_CREATE_FAIL_MSG = "Failed to create pip
 
 static const char *const PIPELINE_CREATE_FAIL_MSG = "Failed to create graphics pipeline!";
 
-
-
 #include "VulkanMemoryManager.h"
 #include "Vertex.h"
 #include "Model.h"
 
-struct UniformBufferObject {
+struct UniformBufferObject
+{
 	alignas(16) glm::mat4 model;
 	alignas(16) glm::mat4 view;
 	alignas(16) glm::mat4 proj;
 };
 
-class Application {
+class Application
+{
 private:
 	//Constants
 	static inline constexpr std::array<const char *, 1> requiredDeviceExtensions{
-			VK_KHR_SWAPCHAIN_EXTENSION_NAME
-	};
+		VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 	static inline constexpr std::array<const char *, 1> validationLayers{
-			"VK_LAYER_KHRONOS_validation"
-	};
+		"VK_LAYER_KHRONOS_validation"};
 	static const int WIDTH{800};
 	static const int HEIGHT{600};
 	static const int MAX_FRAMES_IN_FLIGHT = 2;
@@ -92,11 +88,13 @@ private:
 	// Done so that validation can be toggled in the future
 	//	static const bool enableValidationLayers = true;
 	std::vector<vk::DescriptorSet> descriptorSets{};
-	std::unique_ptr<Model> modelHandle{};
+	std::vector<std::unique_ptr<Model>> modelHandles{};
+
 public:
 	Application();
 
-	void run() {
+	void run()
+	{
 		initWindow();
 		initVulkan();
 		mainLoop();
@@ -104,32 +102,37 @@ public:
 	}
 
 private:
-	struct QueueFamilyIndices {
+	struct QueueFamilyIndices
+	{
 		std::optional<uint32_t> graphicsFamily;
 		std::optional<uint32_t> presentFamily;
 
-		bool isComplete() {
+		bool isComplete()
+		{
 			return graphicsFamily.has_value() && presentFamily.has_value();
 		}
 	};
 
-	struct SwapChainSupportDetails {
+	struct SwapChainSupportDetails
+	{
 		vk::SurfaceCapabilitiesKHR capabilities{};
 		std::vector<vk::SurfaceFormatKHR> formats{};
 		std::vector<vk::PresentModeKHR> presentModes{};
 
 		SwapChainSupportDetails(vk::SurfaceCapabilitiesKHR capabilitiesKHR,
-		                        std::vector<vk::SurfaceFormatKHR> surfaceFormats,
-		                        std::vector<vk::PresentModeKHR> presentModesKHR)
-				: capabilities{std::move(capabilitiesKHR)},
-				  formats{std::move(surfaceFormats)},
-				  presentModes{std::move(presentModesKHR)} {
+								std::vector<vk::SurfaceFormatKHR> surfaceFormats,
+								std::vector<vk::PresentModeKHR> presentModesKHR)
+			: capabilities{std::move(capabilitiesKHR)},
+			  formats{std::move(surfaceFormats)},
+			  presentModes{std::move(presentModesKHR)}
+		{
 		}
 	};
 
 	void initWindow();
 
-	void initVulkan() {
+	void initVulkan()
+	{
 		initVulkanBeforePipeline();
 		createGraphicsPipeline();
 		initVulkanAfterPipeline();
@@ -139,9 +142,12 @@ private:
 
 	void cleanup();
 
+	void loadHandles();
+
 	void initVulkanBeforePipeline();
 
-	void createGraphicsPipeline() {
+	void createGraphicsPipeline()
+	{
 		auto bindingDescription = Vertex::getBindingDescription();
 		auto attributeDescriptions = Vertex::getAttributeDescriptions();
 		createGraphicsPipelineFromDescriptions(bindingDescription, attributeDescriptions);
@@ -188,7 +194,7 @@ private:
 	size_t scoreDevice(vk::PhysicalDevice device);
 
 	void createGraphicsPipelineFromDescriptions(vk::VertexInputBindingDescription &bindingDescription,
-	                                            std::array<vk::VertexInputAttributeDescription, 3> &attributeDescriptions);
+												std::array<vk::VertexInputAttributeDescription, 3> &attributeDescriptions);
 
 	vk::SampleCountFlagBits getMaxUsableSampleCount();
 
@@ -206,10 +212,8 @@ private:
 
 	void createSyncObjects();
 
-
-
 	void transitionImageLayout(vk::Image image, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout,
-	                           uint32_t mipLevels);
+							   uint32_t mipLevels);
 
 	void copyBufferToImage(vk::Buffer buffer, vk::Image image, uint32_t width, uint32_t height);
 
@@ -223,10 +227,10 @@ private:
 
 	void
 	createImage(uint32_t width, uint32_t height, uint32_t imageMipLevels, vk::SampleCountFlagBits numSamples,
-	            vk::Format format,
-	            vk::ImageTiling tiling,
-	            vk::ImageUsageFlags usage,
-	            VmaMemoryUsage memUsage, vk::Image &image, VmaAllocation &imageMemory);
+				vk::Format format,
+				vk::ImageTiling tiling,
+				vk::ImageUsageFlags usage,
+				VmaMemoryUsage memUsage, vk::Image &image, VmaAllocation &imageMemory);
 
 	vk::CommandBuffer beginSingleTimeCommands();
 
@@ -244,7 +248,7 @@ private:
 
 	vk::Format
 	findSupportedFormat(const std::vector<vk::Format> &candidates, vk::ImageTiling tiling,
-	                    vk::FormatFeatureFlags features);
+						vk::FormatFeatureFlags features);
 
 	void createDepthResources();
 
@@ -259,11 +263,11 @@ private:
 	void validateLayerSupport();
 
 	static VKAPI_ATTR vk::Bool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-	                                                      VkDebugUtilsMessageTypeFlagsEXT messageType,
-	                                                      const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
-	                                                      void *pUserData);
+														  VkDebugUtilsMessageTypeFlagsEXT messageType,
+														  const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
+														  void *pUserData);
 
-	void updateUniformBuffer(uint32_t currentImage);
+	void updateUniformBuffer(uint32_t currentImage, glm::mat4& model);
 
 	void drawFrame();
 
@@ -279,6 +283,5 @@ private:
 
 	void cleanupPipelineResources() const;
 };
-
 
 #endif //DNDIDEA_TRIANGLEAPPLICATION_H

@@ -19,7 +19,7 @@ void Application::setupDebugMessenger()
 void Application::cleanup()
 {
 	cleanupSwapChain();
-	modelHandle.reset();
+	modelHandles.clear();
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
@@ -138,15 +138,15 @@ void Application::framebufferResizeCallback(GLFWwindow *window, int, int)
 	app->framebufferResized = true;
 }
 
-void Application::updateUniformBuffer(uint32_t currentImage)
+void Application::updateUniformBuffer(uint32_t currentImage, glm::mat4& model)
 {
 	static auto startTime = std::chrono::high_resolution_clock::now();
 
 	auto currentTime = std::chrono::high_resolution_clock::now();
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 	UniformBufferObject ubo = {};
-	ubo.model = glm::rotate(glm::mat4(1.0f), time * 0.5f * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	ubo.view = glm::lookAt(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.model = model;
+	ubo.view = glm::lookAt(glm::vec3(3.0f, 3.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	ubo.proj = glm::perspective(glm::radians(90.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f,
 								40.0f);
 	ubo.proj[1][1] *= -1;
@@ -342,11 +342,16 @@ void Application::createDescriptorSets()
 	for (size_t i = 0; i < swapChainImages.size(); i++)
 	{
 		vk::DescriptorBufferInfo bufferInfo{uniformBuffers[i], 0, sizeof(UniformBufferObject)};
-		vk::DescriptorImageInfo imageInfo{modelHandle->GetTextureSampler(), modelHandle->GetTextureView(), vk::ImageLayout::eShaderReadOnlyOptimal};
+		std::vector<vk::DescriptorImageInfo> textureInfos{};
+		for (auto &handle : modelHandles)
+		{
+			textureInfos.emplace_back(handle->GetTextureSampler(), handle->GetTextureView(), vk::ImageLayout::eShaderReadOnlyOptimal);
+		}
+
 		std::array<vk::WriteDescriptorSet, 2> descriptorWrites{
 			vk::WriteDescriptorSet{descriptorSets[i], 0, 0, 1, vk::DescriptorType::eUniformBuffer, {}, &bufferInfo},
 			vk::WriteDescriptorSet{descriptorSets[i], 1, 0, 1, vk::DescriptorType::eCombinedImageSampler,
-								   &imageInfo}};
+								   &textureInfos.front()}};
 		device.updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0,
 									nullptr);
 	}
@@ -486,15 +491,20 @@ void Application::createCommandBuffers()
 											   static_cast<uint32_t>(clearValues.size()), clearValues.data());
 		commandBuffers[i].beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
 		commandBuffers[i].bindPipeline(vk::PipelineBindPoint::eGraphics, graphicsPipeline);
-		vk::Buffer vertexBuffers[] = {std::get<0>(modelHandle->GetMeshBuffer())};
-		vk::DeviceSize offsets[] = {0};
-		commandBuffers[i].bindVertexBuffers(0, 1, vertexBuffers, offsets);
-		commandBuffers[i].bindIndexBuffer(std::get<0>(modelHandle->GetIndicesBuffer()), offsets[0], vk::IndexType::eUint32);
+		std::vector<vk::Buffer> vertBuffs{};
+		std::vector<vk::DeviceSize> offsets{};
 		commandBuffers[i].bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout, 0, 1,
-											 descriptorSets.data(), 0,
-											 nullptr);
-
-		commandBuffers[i].drawIndexed(modelHandle->GetIndexCount(), 1, 0, 0, 0);
+											 descriptorSets.data(), 0, nullptr);
+		for (auto &handle : modelHandles)
+		{
+			vertBuffs.push_back(std::get<0>(handle->GetMeshBuffer()));
+			offsets.push_back(0);
+			commandBuffers[i].bindVertexBuffers(0, vertBuffs, offsets);
+			commandBuffers[i].bindIndexBuffer(std::get<0>(handle->GetIndicesBuffer()), offsets[0], vk::IndexType::eUint32);
+			commandBuffers[i].drawIndexed(handle->GetIndexCount(), 1, 0, 0, 0);
+			vertBuffs.clear();
+			offsets.clear();
+		}
 		commandBuffers[i].endRenderPass();
 		commandBuffers[i].end();
 	}
@@ -884,13 +894,23 @@ void Application::initVulkanAfterPipeline()
 	createColorResources();
 	createDepthResources();
 	createFramebuffers();
-	modelHandle = std::make_unique<Model>("../resources/models/chalet.obj", "../resources/textures/chalet.jpg");
-	modelHandle->loadDataToGPU();
+	loadHandles();
 	createUniformBuffers();
 	createDescriptorPool();
 	createDescriptorSets();
 	createCommandBuffers();
 	createSyncObjects();
+}
+
+void Application::loadHandles()
+{
+	modelHandles.emplace_back(std::make_unique<Model>("../resources/models/debug_plane.obj", "../resources/textures/test_texture.png"));
+	modelHandles.front()->RotateModel(glm::vec3{0.0f, 1.0f, 0.0f}, 1.5708f);
+	modelHandles.emplace_back(std::make_unique<Model>("../resources/models/debug_cube.obj", "../resources/textures/test_texture.png"));
+	for (auto &handle : modelHandles)
+	{
+		handle->loadDataToGPU();
+	}
 }
 
 void Application::createGraphicsPipelineFromDescriptions(vk::VertexInputBindingDescription &bindingDescription,
