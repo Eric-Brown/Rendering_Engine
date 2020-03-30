@@ -120,7 +120,7 @@ void Model::TranslateModel(glm::vec3 delta)
 }
 void Model::RotateModel(glm::vec3 axis, float theta)
 {
-	glm::rotate(model_transform, theta, axis)
+	glm::rotate(model_transform, theta, axis);
 }
 void Model::createTextureImage()
 {
