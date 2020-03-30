@@ -1,0 +1,34 @@
+@startuml VulkanMM
+class VulkanMemoryManager {
+	- VulkanMemoryManager(Device device, PhysicalDevice physDevice, CommandPool pool, Queue queue)
+	- {static} inline VulkanMemoryManager *vmmInstance{}
+	- allocator: VmaAllocator
+	- logicalDevice: Device
+	- physicalDevice: PhysicalDevice
+	- commandPool: CommandPool
+	- graphicsQueue: Queue
+	- copyBuffer(Buffer srcBuffer, Buffer dstBuffer, DeviceSize size)
+	- beginSingleTimeCommands(): CommandBuffer
+	- endSingleTimeCommands(CommandBuffer commandBuffer)
+	- transitionImageLayout(Image image, Format format, ImageLayout oldLayout, ImageLayout newLayout, uint32_t inMipLevels)
+	- copyBufferToImage(Buffer buffer, Image image, ImageCreateInfo info)
+	- generateMipmaps(Image image, ImageCreateInfo info)
+	- hasStencilComponent(Format format): bool
+	+ {static} void Init(Device device, PhysicalDevice physDevice, CommandPool pool, Queue queue)
+	+ {static} VulkanMemoryManager *getInstance()
+	+ {static} void Destroy()
+	+ void DestroyImage(Image img, VmaAllocation imgMemory)
+	+ void DestroyBuffer(Buffer buff, VmaAllocation buffAllocation)
+	+ void DestroyImageView(ImageView view)
+	+ void DestroySampler(Sampler sampler)
+	+ tuple<Buffer, VmaAllocation> initializeStagingBuffer(void *data, size_t dataSize)
+	+ void createBuffer(DeviceSize size, BufferUsageFlags usage, VmaMemoryUsage memoryUsage, Buffer &buffer, VmaAllocation &bufferAllocation)
+	+ void CopyDataToAllocation(void *toCopy, DeviceSize copySize, VmaAllocation allocation)
+	+ tuple<Image, VmaAllocation> createImage(VkImageCreateInfo imageInfo, VmaAllocationCreateInfo allocationCreateInfo)
+	+ ImageView CreateImageView(ImageViewCreateInfo info)
+	+ Sampler CreateImageSampler(SamplerCreateInfo info)
+	+ tuple<Buffer, VmaAllocation> createBufferTypeFromVector(vector<T> thing, BufferUsageFlags bufferType)
+	+ DeviceSize GetAllocationSize(VmaAllocation allocation)
+	+ tuple<Image, VmaAllocation> CreateImageFromData(void *data, DeviceSize size, ImageCreateInfo info, VmaMemoryUsage usage)
+}
+@enduml

@@ -1,0 +1,12 @@
+@startuml Overall
+!include Application.puml
+!include Model.puml
+!include Vertex.puml
+!include VulkanMemoryManager.puml
+!include GlobalConstants.puml
+Application --> Model : Uses 
+Model --> Vertex : Uses
+Model --> VulkanMemoryManager : Depends on
+Application --> VulkanMemoryManager : Depends on
+Application --> Constants : Uses
+@enduml

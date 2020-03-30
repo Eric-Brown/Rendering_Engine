@@ -1,0 +1,39 @@
+@startuml Model
+class Model{
+	-textureFileName{}: string
+	-mesh{}: vector<Vertex>
+	-meshIndexes{}: vector<uint32_t>
+	-model_transform{1.0f}: mat4
+	-vertexBuffer{}: tuple<Buffer, VmaAllocation>
+	-indexBuffer{}: tuple<Buffer, VmaAllocation>
+	-textureBuffer{}: tuple<Image, VmaAllocation>
+	-textureImageView{}: ImageView
+	-textureSampler{}: Sampler
+	-mipLevels{}: uint32_t
+	__
+	- bool readModelFile(const string &pFile)
+	- void processSceneObject(const aiScene *scene)
+	- void createTextureImage()
+	- ImageView createImageView(Image image, Format format, ImageAspectFlags aspectFlags, uint32_t inMipLevels)
+	- void createTextureImageView()
+	- void createTextureSampler()
+	- void loadImageDataToGPU()
+	- void DestroyBufferIfExists(tuple<Buffer, VmaAllocation> buffer) {noexcept}
+	..Public Methods..
+	+ Model(const string fName);
+	+ Model(const string fName, const string texFName);
+	+ ~Model() noexcept;
+	+ const tuple<Buffer, VmaAllocation> &GetMeshBuffer();
+	+ const tuple<Buffer, VmaAllocation> &GetIndicesBuffer();
+	+ const tuple<Image, VmaAllocation> &GetTextureBuffer();
+	+ const mat4 GetModelMatrix();
+	+ void ScaleModel(vec3 delta);
+	+ void TranslateModel(vec3 delta);
+	+ void RotateModel(vec3 axis, float theta);
+	+ const Sampler GetTextureSampler();
+	+ const ImageView GetTextureView();
+	+ uint32_t GetIndexCount();
+	+ const mat4 &GetModelTransform();
+	+ void loadDataToGPU();
+}
+@enduml

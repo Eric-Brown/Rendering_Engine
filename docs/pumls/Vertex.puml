@@ -1,0 +1,10 @@
+@startuml Vertex
+class Vertex{
+	+ pos: vec3
+	+ color: vec3
+	+ texCoord: vec2
+	+ {static} getBindingDescription(): VertexInputBindingDescription
+	+ {static} getAttributeDescriptions(): array<VertexInputAttributeDescription, 3>
+	+ friend ostream &operator<<(ostream &os, const Vertex &vertex)
+}
+@enduml

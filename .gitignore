@@ -17,3 +17,6 @@ out
 
 # Ignore vkvia.exe (from vulkan sdk) output.
 vkvia.html\
+
+# Ignore puml output
+docs/diagrams/pumls

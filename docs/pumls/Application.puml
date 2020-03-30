@@ -1,0 +1,113 @@
+@startuml Application
+class Application {
+	- {static} inline constexpr array<const char *, 1> requiredDeviceExtensions{VK_KHR_SWAPCHAIN_EXTENSION_NAME}
+	- {static} inline constexpr array<const char *, 1> validationLayers{"VK_LAYER_KHRONOS_validation"}
+	- {static} const int WIDTH{800}
+	- {static} const int HEIGHT{600}
+	- {static} const int MAX_FRAMES_IN_FLIGHT = 2
+	- GLFWwindow *window{}
+	- Instance instance{}
+	- SurfaceKHR surface{}
+	- PhysicalDevice physicalDevice{}
+	- Device device{}
+	- DebugUtilsMessengerEXT debugMessenger{}
+	- SwapchainKHR swapChain{}
+	- vector<Image> swapChainImages{}
+	- Format swapChainImageFormat{}
+	- Extent2D swapChainExtent{}
+	- vector<ImageView> swapChainImageViews{}
+	- RenderPass renderPass{}
+	- DescriptorSetLayout descriptorSetLayout{}
+	- PipelineLayout pipelineLayout{}
+	- Pipeline graphicsPipeline{}
+	- Queue graphicsQueue{}
+	- Queue presentQueue{}
+	- vector<Framebuffer> swapChainFramebuffers{}
+	- CommandPool commandPool{}
+	- vector<CommandBuffer> commandBuffers{}
+	- vector<Semaphore> imageAvailableSemaphores{}
+	- vector<Semaphore> renderFinishedSemaphores{}
+	- vector<Fence> inFlightFences{}
+	- size_t currentFrame = 0
+	- bool framebufferResized{false}
+	- Image depthImage{}
+	- VmaAllocation depthImageMemory{}
+	- ImageView depthImageView{}
+	- Image colorImage{}
+	- VmaAllocation colorImageMemory{}
+	- ImageView colorImageView{}
+	- SampleCountFlagBits msaaSamples = e1
+	- vector<Buffer> uniformBuffers{}
+	- vector<VmaAllocation> uniformBuffersAllocations{}
+	- DescriptorPool descriptorPool{}
+	- vector<DescriptorSet> descriptorSets{}
+	- vector<unique_ptr<Model>> modelHandles{}
+	+ Application()
+	+ run(): void
+	- initWindow(): void
+	- initVulkan(): void
+	- mainLoop(): void
+	- cleanup(): void
+	- loadHandles(): void
+	- initVulkanBeforePipeline(): void
+	- createGraphicsPipeline(): void
+	- initGlobalVmaAllocator(): void
+	- initVulkanAfterPipeline(): void
+	- createInstance(): void
+	- setupDebugMessenger(): void
+	- createSurface(): void
+	- pickPhysicalDevice(): void
+	- createLogicalDevice(): void
+	- createSwapChain(): void
+	- createImageViews(): void
+	- createRenderPass(): void
+	- createDescriptorSetLayout(): void
+	- findQueueFamilies(PhysicalDevice device): QueueFamilyIndices
+	- querySwapChainSupport(PhysicalDevice device): SwapChainSupportDetails
+	- populateDebugMessengerCreateInfo(DebugUtilsMessengerCreateInfoEXT &createInfo): void const
+	- checkDeviceExtensionSupport(PhysicalDevice device): bool
+	- isDeviceSuitable(PhysicalDevice device): bool
+	- chooseSwapSurfaceFormat(const vector<SurfaceFormatKHR> &availableFormats): SurfaceFormatKHR
+	- chooseSwapPresentMode(const vector<PresentModeKHR> &availablePresentModes): PresentModeKHR
+	- chooseSwapExtent(const SurfaceCapabilitiesKHR &capabilities): Extent2D
+	- scoreDevice(PhysicalDevice device): size_t
+	- createGraphicsPipelineFromDescriptions(VertexInputBindingDescription &bindingDescription, array<VertexInputAttributeDescription, 3> &attributeDescriptions): void
+	- getMaxUsableSampleCount(): SampleCountFlagBits
+	- createFramebuffers(): void
+	- destroyGlobalAllocator(): void
+	- createCommandPool(): void
+	- cleanupSwapChain(): void
+	- recreateSwapChain(): void
+	- createCommandBuffers(): void
+	- createSyncObjects(): void
+	- transitionImageLayout(Image image, Format format, ImageLayout oldLayout, ImageLayout newLayout, uint32_t mipLevels): void
+	- copyBufferToImage(Buffer buffer, Image image, uint32_t width, uint32_t height): void
+	- createUniformBuffers(): void
+	- createDescriptorPool(): void
+	- createDescriptorSets(): void
+	- createColorResources(): void
+	- createImage(uint32_t width, uint32_t height, uint32_t imageMipLevels, SampleCountFlagBits numSamples, Format format, ImageTiling tiling, ImageUsageFlags usage, VmaMemoryUsage memUsage, Image &image, VmaAllocation &imageMemory): void
+	- beginSingleTimeCommands(): CommandBuffer
+	- endSingleTimeCommands(CommandBuffer commandBuffer): void
+	- createImageView(Image image, Format format, ImageAspectFlags aspectFlags, uint32_t mipLevels): ImageView
+	- hasStencilComponent(Format format): bool
+	- findDepthFormat(): Format
+	- generateMipmaps(Image image, Format imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels): void
+	- findSupportedFormat(const vector<Format> &candidates, ImageTiling tiling, FormatFeatureFlags features): Format
+	- createDepthResources(): void
+	- createApplicationInfo(): ApplicationInfo const
+	- createInstanceCreateInfo(ApplicationInfo &appInfo): InstanceCreateInfo
+	- validateExtensions(const vector<const char *> &toValidate): void const
+	- vector<const char *> getRequiredExtensions() const
+	- validateLayerSupport(): void
+	- {static} VKAPI_ATTR Bool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void *pUserData)
+	- updateUniformBuffer(uint32_t currentImage, mat4& model): void
+	- drawFrame(): void
+	- {static} void framebufferResizeCallback(GLFWwindow *window, int width, int height)
+	- {static} vector<char> readFile(const string &filename)
+	- createShaderModule(const vector<char> &code): ShaderModule
+	- cleanupImageResources(): void const
+	- tuple<Buffer, VmaAllocation> initializeStagingBuffer(void *data, DeviceSize dataSize)
+	- cleanupPipelineResources(): void const
+}
+@enduml

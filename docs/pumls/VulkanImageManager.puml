@@ -1,0 +1,31 @@
+@startuml VulkanImageManager
+class VulkanImageManager{
+	{static} void Init()
+	CreateImageFromFile(fName: string) :(Image, Allocation)
+	
+}
+note as N1
+	Will need allocator accessor
+	create image as VMM current
+	destroy image as VMM current
+	neither buffer nor image manager should control allocator lifetime
+	transition image layout will be needed
+	knowledge about image formats are needed
+	know how to copy buffer to image
+	know how to generate mipmaps
+	create/destroy image view
+	create/destroy image sampler
+	resource manager must know how to deal with staging data
+end note
+note as N2
+	create image:
+		allocate cpu data for loading
+		load cpu data to group
+		free cpu data
+		create vulkan image
+		set image to be destination optimal for xfer
+		copy from staging to destination
+		release staging
+		return image information
+end note
+@enduml
