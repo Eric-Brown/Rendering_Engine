@@ -1,0 +1,22 @@
+@startuml
+class VulkanResourceManager{
+	- VulkanMemoryManager(Device device, PhysicalDevice physDevice, CommandPool pool, Queue queue)
+	- {static} inline VulkanMemoryManager *vmmInstance{}
+	- allocator: VmaAllocator
+	- logicalDevice: Device
+	- physicalDevice: PhysicalDevice
+	- commandPool: CommandPool
+	- graphicsQueue: Queue
+	- copyBuffer(Buffer srcBuffer, Buffer dstBuffer, DeviceSize size)
+	- beginSingleTimeCommands(): CommandBuffer
+	- endSingleTimeCommands(CommandBuffer commandBuffer)
+	+ {static} void Init(Device device, PhysicalDevice physDevice, CommandPool pool, Queue queue)
+	+ {static} VulkanMemoryManager *getVMMInstance()
+	+ {static} VulkanImageManager *getVIMInstance()
+	+ {static} void Destroy()
+	+ tuple<Buffer, VmaAllocation> initializeStagingBuffer(void *data, size_t dataSize)
+	+ void CopyDataToAllocation(void *toCopy, DeviceSize copySize, VmaAllocation allocation)
+	+ DeviceSize GetAllocationSize(VmaAllocation allocation)
+	+ tuple<Image, VmaAllocation> CreateImageFromData(void *data, DeviceSize size, ImageCreateInfo info, VmaMemoryUsage usage)
+}
+@enduml

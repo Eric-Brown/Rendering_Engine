@@ -1,8 +1,25 @@
 @startuml VulkanImageManager
 class VulkanImageManager{
 	{static} void Init()
-	CreateImageFromFile(fName: string) :(Image, Allocation)
+	- allocator: VmaAllocator
+	- logicalDevice: Device
+	- physicalDevice: PhysicalDevice
+	- commandPool: CommandPool
+	- graphicsQueue: Queue
+	stbi_load, stbifree...uses createimagefromdata (maybe change ?)
+	+ CreateImageFromFile(fName: string) :(Image, Allocation)
 	
+	+ CreateImageFromData(data, dSize, info, usage) :(Image, Allocation)
+	+ void DestroyImage(Image img, VmaAllocation imgMemory)
+	+ void DestroyImageView(ImageView view)
+	+ void DestroySampler(Sampler sampler)
+	+ ImageView CreateImageView(ImageViewCreateInfo info)
+	+ Sampler CreateImageSampler(SamplerCreateInfo info)
+	+ tuple<Image, VmaAllocation> createImage(VkImageCreateInfo imageInfo, VmaAllocationCreateInfo allocationCreateInfo)
+	- transitionImageLayout(Image image, Format format, ImageLayout oldLayout, ImageLayout newLayout, uint32_t inMipLevels)
+	- copyBufferToImage(Buffer buffer, Image image, ImageCreateInfo info)
+	- generateMipmaps(Image image, ImageCreateInfo info)
+	- hasStencilComponent(Format format): bool
 }
 note as N1
 	Will need allocator accessor
