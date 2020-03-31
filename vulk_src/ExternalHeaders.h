@@ -32,6 +32,5 @@
 #include <iostream>
 #include <tuple>
 #include <vector>
-#include <format>
 
 #endif //RENDER_HEADERS
