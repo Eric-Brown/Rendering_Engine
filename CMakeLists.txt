@@ -1,15 +1,16 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.11)
 
 # Set values for OpenGL, CPP and optionally a policy
 set(CMAKE_CXX_STANDARD 17)
 set(OpenGL_GL_PREFERENCE "GLVND")
 #set(HUNTER_STATUS_DEBUG ON)
-if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
+if (${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.12)
     cmake_policy(SET CMP0074 NEW)
 endif ()
 # Set value to suppress the CMake warnings that vcpkg will emit while in VS2019
 set(VCPKG_SUPPRESS_INSTALLED_LIBRARIES_WARNING TRUE)
 
+set(HUNTER_PACKAGES glfw3 stb glm Assimp VulkanMemoryAllocator)
 # Import in HunterGate file for using Hunter
 include("cmake/HunterGate.cmake")
 HunterGate(
@@ -23,20 +24,17 @@ project(DnDIdea)
 find_package(OpenGL REQUIRED)
 find_package(Vulkan REQUIRED)
 
+set(CMAKE_FIND_PACKAGE_PREFER_CONFIG TRUE)
+
 # glfw used for windowing
-hunter_add_package(glfw)
 find_package(glfw3 REQUIRED)
 # stb used for image loading
-hunter_add_package(stb)
 find_package(stb REQUIRED)
 # glm used for vector and matrix operations
-hunter_add_package(glm)
 find_package(glm REQUIRED)
 # assimp used for model loading
-hunter_add_package(Assimp)
-find_package(Assimp CONFIG REQUIRED)
+find_package(Assimp REQUIRED)
 # VMA used for GPU memory management
-hunter_add_package(VulkanMemoryAllocator)
 find_package(VulkanMemoryAllocator REQUIRED)
 
 if (MSVC)
