@@ -96,17 +96,10 @@ void VulkanImageManager::ThrowSTBI_Error(const std::string &fName)
 
 vk::DeviceSize VulkanImageManager::CalculateImageSize(const vk::ImageCreateInfo &info)
 {
-	uint32_t imgChannels{};
+	uint32_t imgChannels{4};
 	//In future can switch using image format from info
 	uint32_t bytesPerChannel{1};
-	switch (auto format
-			: info.format)
-	{
-	default:
-		imgChannels = 4;
-		break;
-	}
-	auto imageSize = static_cast<vk::DeviceSize>(imgWidth * imgHeight * imgChannels * bytesPerChannel);
+	return static_cast<vk::DeviceSize>(info.extent.width * info.extent.height * imgChannels * bytesPerChannel);
 }
 
 std::tuple<vk::Image, VmaAllocation> VulkanImageManager::CreateImageBuffer(VkImageCreateInfo info, VmaAllocationCreateInfo allocationInfo)
@@ -166,7 +159,7 @@ std::tuple<vk::AccessFlags, vk::PipelineStageFlags> VulkanImageManager::Determin
 		get<1>(dstFlags) = vk::PipelineStageFlagBits::eEarlyFragmentTests;
 		break;
 	default:
-		throw runtime_error();
+		throw runtime_error("");
 		break;
 	}
 	return dstFlags;
@@ -186,7 +179,7 @@ std::tuple<vk::AccessFlags, vk::PipelineStageFlags> VulkanImageManager::Determin
 		get<1>(srcFlags) = vk::PipelineStageFlagBits::eTransfer;
 		break;
 	default:
-		throw runtime_error();
+		throw runtime_error("");
 		break;
 	}
 	return srcFlags;
@@ -195,7 +188,9 @@ std::tuple<vk::AccessFlags, vk::PipelineStageFlags> VulkanImageManager::Determin
 void VulkanImageManager::ThrowInvalidTransitionError(vk::ImageLayout from, vk::ImageLayout to)
 {
 	using namespace std;
-	string message{format("Unsupported layout transition.\nFrom: {}\nTo: {}", GetImageLayoutName(from), GetImageLayoutName(to))};
+	string fromName =  GetImageLayoutName(from);
+	string toName = GetImageLayoutName(to);
+	string message{"Unsupported layout transition.\nFrom: " + fromName + "\nTo: " + toName};
 	throw invalid_argument(message);
 }
 

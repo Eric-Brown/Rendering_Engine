@@ -268,7 +268,7 @@ private:
 														  const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
 														  void *pUserData);
 
-	void updateUniformBuffer(uint32_t currentImage, glm::mat4& model);
+	void updateUniformBuffer(uint32_t currentImage);
 
 	void drawFrame();
 

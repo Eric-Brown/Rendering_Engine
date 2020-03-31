@@ -23,7 +23,7 @@ public:
 
   std::tuple<vk::Buffer, VmaAllocation>
   initializeStagingBuffer(void *data, size_t dataSize);
-    vk::CommandBuffer beginSingleTimeCommands();
+  vk::CommandBuffer beginSingleTimeCommands();
   void endSingleTimeCommands(vk::CommandBuffer commandBuffer);
 
   std::tuple<vk::Buffer, VmaAllocation> StageData(void *data, size_t dataSize);
@@ -37,10 +37,7 @@ public:
     vk::DeviceSize bufferSize = sizeof(T) * thing.size();
     auto [stagingBuffer, stagingBufferAllocation] =
         initializeStagingBuffer(thing.data(), bufferSize);
-    vk::Buffer bufferToReturn;
-    VmaAllocation allocationToReturn;
-    createBuffer(bufferSize, vk::BufferUsageFlagBits::eTransferDst | bufferType,
-                 VMA_MEMORY_USAGE_GPU_ONLY, bufferToReturn, allocationToReturn);
+    auto [bufferToReturn, allocationToReturn] = createBuffer(bufferSize, vk::BufferUsageFlagBits::eTransferDst | bufferType, VMA_MEMORY_USAGE_GPU_ONLY);
     copyBuffer(stagingBuffer, bufferToReturn, bufferSize);
     DestroyBuffer(stagingBuffer, stagingBufferAllocation);
     // vmaDestroyBuffer(allocator, stagingBuffer, stagingBufferAllocation);
@@ -58,7 +55,6 @@ private:
   vk::CommandPool commandPool;
   vk::Queue graphicsQueue;
   void copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size);
-
 };
 
 #endif // DNDIDEA_VULKANMEMORYMANAGER_H

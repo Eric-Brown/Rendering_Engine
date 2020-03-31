@@ -138,14 +138,14 @@ void Application::framebufferResizeCallback(GLFWwindow *window, int, int)
 	app->framebufferResized = true;
 }
 
-void Application::updateUniformBuffer(uint32_t currentImage, glm::mat4& model)
+void Application::updateUniformBuffer(uint32_t currentImage)
 {
 	static auto startTime = std::chrono::high_resolution_clock::now();
 
 	auto currentTime = std::chrono::high_resolution_clock::now();
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 	UniformBufferObject ubo = {};
-	ubo.model = model;
+	ubo.model = glm::rotate(glm::mat4(1.0f), time * 0.5f * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	ubo.view = glm::lookAt(glm::vec3(3.0f, 3.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	ubo.proj = glm::perspective(glm::radians(90.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f,
 								40.0f);
@@ -328,7 +328,7 @@ void Application::createImage(uint32_t width, uint32_t height, uint32_t imageMip
 	vk::ImageCreateInfo imageInfo{{}, vk::ImageType::e2D, format, vk::Extent3D{width, height, 1}, imageMipLevels, 1, numSamples, tiling, usage, vk::SharingMode::eExclusive, {}, {}, {}};
 	VmaAllocationCreateInfo allocationCreateInfo{};
 	allocationCreateInfo.usage = memUsage;
-	auto [retImg, imgAlloc] = VulkanMemoryManager::getInstance()->createImage(imageInfo, allocationCreateInfo);
+	auto [retImg, imgAlloc] = VulkanImageManager::getInstance()->CreateImageBuffer(imageInfo, allocationCreateInfo);
 	image = retImg;
 	imageMemory = imgAlloc;
 }
@@ -374,9 +374,7 @@ void Application::createUniformBuffers()
 	uniformBuffersAllocations.resize(swapChainImages.size());
 	for (size_t i = 0; i < swapChainImages.size(); i++)
 	{
-		VulkanMemoryManager::getInstance()
-			->createBuffer(bufferSize, vk::BufferUsageFlagBits::eUniformBuffer, VMA_MEMORY_USAGE_CPU_ONLY,
-						   uniformBuffers[i], uniformBuffersAllocations[i]);
+		std::tie(uniformBuffers[i], uniformBuffersAllocations[i]) = VulkanMemoryManager::getInstance()->createBuffer(bufferSize, vk::BufferUsageFlagBits::eUniformBuffer, VMA_MEMORY_USAGE_CPU_ONLY);
 	}
 }
 
@@ -541,9 +539,9 @@ void Application::cleanupPipelineResources() const
 void Application::cleanupImageResources() const
 {
 	vkDestroyImageView(device, colorImageView, nullptr);
-	VulkanMemoryManager::getInstance()->DestroyImage(colorImage, colorImageMemory);
+	VulkanImageManager::getInstance()->DestroyImage(colorImage, colorImageMemory);
 	vkDestroyImageView(device, depthImageView, nullptr);
-	VulkanMemoryManager::getInstance()->DestroyImage(depthImage, depthImageMemory);
+	VulkanImageManager::getInstance()->DestroyImage(depthImage, depthImageMemory);
 }
 
 void Application::createCommandPool()
