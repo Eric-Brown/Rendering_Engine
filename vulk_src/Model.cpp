@@ -124,30 +124,24 @@ void Model::RotateModel(glm::vec3 axis, float theta)
 }
 void Model::createTextureImage()
 {
-	int texWidth, texHeight, texChannels;
-	stbi_uc *pixels = stbi_load(textureFileName.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-	mipLevels = static_cast<uint32_t>(std::floor(std::log2((std::max)(texWidth, texHeight)))) + 1;
-	auto imageSize = static_cast<vk::DeviceSize>(static_cast<vk::DeviceSize>(texWidth) * texHeight * 4);
-	if (!pixels)
-	{
-		throw std::runtime_error("failed to load texture image!");
-	}
-	vk::ImageCreateInfo info({}, vk::ImageType::e2D, vk::Format::eR8G8B8A8Unorm, vk::Extent3D{static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight), 1}, mipLevels, 1, vk::SampleCountFlagBits::e1, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::SharingMode::eExclusive, {}, {}, {});
-	textureBuffer = VulkanMemoryManager::getInstance()->CreateImageFromData(pixels, imageSize, info, VMA_MEMORY_USAGE_GPU_ONLY);
-	stbi_image_free(pixels);
+	auto handleInfo = VulkanImageManager::getInstance()->CreateImageFromFile(textureFileName);
+	std::get<0>(textureBuffer) = handleInfo.image;
+	std::get<1>(textureBuffer) = handleInfo.allocation;
+	mipLevels = handleInfo.imageMipLevels;
+	VulkanImageManager::getInstance()->GenerateMipmaps(handleInfo);
 }
 
 void Model::createTextureImageView()
 {
 	vk::ImageSubresourceRange subresourceRange{vk::ImageAspectFlagBits::eColor, 0, mipLevels, 0, 1};
 	vk::ImageViewCreateInfo viewInfo{{}, std::get<0>(textureBuffer), vk::ImageViewType::e2D, vk::Format::eR8G8B8A8Unorm, {}, subresourceRange};
-	textureImageView = VulkanMemoryManager::getInstance()->CreateImageView(viewInfo);
+	textureImageView = VulkanImageManager::getInstance()->CreateImageView(viewInfo);
 }
 
 void Model::createTextureSampler()
 {
 	vk::SamplerCreateInfo samplerInfo{{}, vk::Filter::eLinear, vk::Filter::eLinear, vk::SamplerMipmapMode::eLinear, vk::SamplerAddressMode::eRepeat, vk::SamplerAddressMode::eRepeat, vk::SamplerAddressMode::eRepeat, 0.0f, VK_TRUE, 16.0f, VK_FALSE, {}, 0.0f, static_cast<float>(mipLevels), vk::BorderColor::eIntOpaqueBlack, VK_FALSE};
-	textureSampler = VulkanMemoryManager::getInstance()->CreateImageSampler(samplerInfo);
+	textureSampler = VulkanImageManager::getInstance()->CreateImageSampler(samplerInfo);
 }
 
 void Model::loadImageDataToGPU()
@@ -175,9 +169,9 @@ Model::~Model() noexcept
 {
 	if (std::get<0>(textureBuffer) != vk::Image{})
 	{
-		VulkanMemoryManager::getInstance()->DestroyImage(std::get<0>(textureBuffer), std::get<1>(textureBuffer));
-		VulkanMemoryManager::getInstance()->DestroyImageView(textureImageView);
-		VulkanMemoryManager::getInstance()->DestroySampler(textureSampler);
+		VulkanImageManager::getInstance()->DestroyImage(std::get<0>(textureBuffer), std::get<1>(textureBuffer));
+		VulkanImageManager::getInstance()->DestroyImageView(textureImageView);
+		VulkanImageManager::getInstance()->DestroySampler(textureSampler);
 	}
 	DestroyBufferIfExists(vertexBuffer);
 	DestroyBufferIfExists(indexBuffer);

@@ -7,6 +7,7 @@
 
 #include "ExternalHeaders.h"
 #include "VulkanMemoryManager.h"
+#include "VulkanImageManager.h"
 #include "Vertex.h"
 
 class Model
