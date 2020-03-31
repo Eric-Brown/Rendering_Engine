@@ -8,11 +8,10 @@ std::tuple<vk::Image, VmaAllocation> VulkanImageManager::CreateImageFromFile(std
 	VmaAllocationCreateInfo allocInfo{};
 	allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 	auto [image, dstAllocation] = CreateImageBuffer(info, allocInfo);
-	ImageHandleInfo imageInfo{image, info};
+	ImageHandleInfo imageInfo{image, dstAllocation, info};
 	TransitionImageLayout(imageInfo, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
 	CopyBufferToImage(stgBuffer, imageInfo);
 	VulkanMemoryManager::getInstance()->DestroyBuffer(stgBuffer, stgAllocation);
-	GenerateMipmaps(imageInfo);
 	return std::make_pair(image, dstAllocation);
 }
 
@@ -28,7 +27,6 @@ void VulkanImageManager::CopyBufferToImage(vk::Buffer buffer, const ImageHandleI
 
 void VulkanImageManager::GenerateMipmaps(const ImageHandleInfo &info)
 {
-	// Check if image format supports linear blitting
 	vk::FormatProperties formatProperties{physicalDevice.getFormatProperties(info.format)};
 	if (!(formatProperties.optimalTilingFeatures & vk::FormatFeatureFlagBits::eSampledImageFilterLinear))
 	{
@@ -259,7 +257,7 @@ void VulkanImageManager::Init(vk::Device device, vk::PhysicalDevice physDevice)
 }
 
 VulkanImageManager::VulkanMemoryManager(vk::Device device, vk::PhysicalDevice physDevice)
-:logicalDevice{device}, physicalDevice{physDevice}
+	: logicalDevice{device}, physicalDevice{physDevice}
 {
 }
 
