@@ -20,3 +20,7 @@ vkvia.html\
 
 # Ignore puml output
 docs/diagrams/pumls
+#Ignore tag generation for intellisense
+GPATH
+GRTAGS
+GTAGS
