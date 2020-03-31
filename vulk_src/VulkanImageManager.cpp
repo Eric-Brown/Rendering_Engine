@@ -1,6 +1,6 @@
 #include "VulkanImageManager.h"
 
-std::tuple<vk::Image, VmaAllocation> VulkanImageManager::CreateImageFromFile(std::string fName)
+VulkanImageManager::ImageHandleInfo VulkanImageManager::CreateImageFromFile(std::string fName)
 {
 	auto [rawImgBytes, info] = LoadImageFile(fName);
 	auto [stgBuffer, stgAllocation] = VulkanMemoryManager::getInstance()->StageData(rawImgBytes, CalculateImageSize(info));
@@ -12,7 +12,7 @@ std::tuple<vk::Image, VmaAllocation> VulkanImageManager::CreateImageFromFile(std
 	TransitionImageLayout(imageInfo, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
 	CopyBufferToImage(stgBuffer, imageInfo);
 	VulkanMemoryManager::getInstance()->DestroyBuffer(stgBuffer, stgAllocation);
-	return std::make_pair(image, dstAllocation);
+	return imageInfo;
 }
 
 void VulkanImageManager::CopyBufferToImage(vk::Buffer buffer, const ImageHandleInfo &info)
@@ -21,7 +21,7 @@ void VulkanImageManager::CopyBufferToImage(vk::Buffer buffer, const ImageHandleI
 	vk::ImageSubresourceLayers subresource{vk::ImageAspectFlagBits::eColor, 0, 0, 1};
 	vk::Offset3D imageOffset{0, 0, 0};
 	vk::BufferImageCopy region(0, 0, 0, subresource, imageOffset, info.extent);
-	commandBuffer.copyBufferToImage(buffer, image, vk::ImageLayout::eTransferDstOptimal, 1, &region);
+	commandBuffer.copyBufferToImage(buffer, info.image, vk::ImageLayout::eTransferDstOptimal, 1, &region);
 	VulkanMemoryManager::getInstance()->endSingleTimeCommands(commandBuffer);
 }
 
@@ -43,7 +43,7 @@ void VulkanImageManager::GenerateMipmaps(const ImageHandleInfo &info)
 												{vk::ImageAspectFlagBits::eColor, {}, 1, 0, 1});
 	int32_t mipWidth = info.extent.width;
 	int32_t mipHeight = info.extent.height;
-	for (uint32_t i = 1; i < info.mipLevels; i++)
+	for (uint32_t i = 1; i < info.imageMipLevels; i++)
 	{
 		imgToXferSrcBarrier.subresourceRange.baseMipLevel = i - 1;
 		commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eTransfer, {},
@@ -63,7 +63,7 @@ void VulkanImageManager::GenerateMipmaps(const ImageHandleInfo &info)
 		mipWidth /= (mipWidth > 1) ? 2 : 1;
 		mipHeight /= (mipHeight > 1) ? 2 : 1;
 	}
-	imgToReadOnlyBarrier.subresourceRange.baseMipLevel = info.mipLevels - 1;
+	imgToReadOnlyBarrier.subresourceRange.baseMipLevel = info.imageMipLevels - 1;
 	imgToReadOnlyBarrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
 	imgToReadOnlyBarrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
 	commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader, {},
@@ -81,15 +81,16 @@ std::tuple<void *, vk::ImageCreateInfo> VulkanImageManager::LoadImageFile(const 
 		ThrowSTBI_Error(fName);
 	}
 	auto mipLevels = static_cast<uint32_t>(floor(log2((max)(imgWidth, imgHeight)))) + 1;
-	vk::Extend3D imgExtent{static_cast<uint32_t>(imgWidth), static_cast<uint32_t>(imgHeight), 1};
+	vk::Extent3D imgExtent{static_cast<uint32_t>(imgWidth), static_cast<uint32_t>(imgHeight), 1};
 	vk::ImageCreateInfo info{{}, vk::ImageType::e2D, vk::Format::eR8G8B8A8Unorm, imgExtent, mipLevels, 1, vk::SampleCountFlagBits::e1, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::SharingMode::eExclusive, {}, {}, {}};
-	return make_tuple<void *, vk::ImageCreateInfo>(pixels, info);
+	return tuple<void *, vk::ImageCreateInfo>(pixels, info);
 }
 
 void VulkanImageManager::ThrowSTBI_Error(const std::string &fName)
 {
 	using namespace std;
-	string message{std::format("Failed to load given image file: {}!\nReason: {}", fName, stbi_failure_reason())};
+	string reason{stbi_failure_reason()};
+	string message{"Failed to load given image file: " + fName + "!\nReason given: " + reason};
 	throw runtime_error(message);
 }
 
@@ -108,7 +109,7 @@ vk::DeviceSize VulkanImageManager::CalculateImageSize(const vk::ImageCreateInfo 
 	auto imageSize = static_cast<vk::DeviceSize>(imgWidth * imgHeight * imgChannels * bytesPerChannel);
 }
 
-std::tuple<vk::Image, VmaAllocation> VulkanImageManager::CreateImageBuffer(const vk::ImageCreateInfo &info, const VmaAllocationCreateInfo &allocationInfo)
+std::tuple<vk::Image, VmaAllocation> VulkanImageManager::CreateImageBuffer(VkImageCreateInfo info, VmaAllocationCreateInfo allocationInfo)
 {
 	VkImage temp;
 	VmaAllocation alloc;
@@ -118,8 +119,8 @@ std::tuple<vk::Image, VmaAllocation> VulkanImageManager::CreateImageBuffer(const
 
 void VulkanImageManager::TransitionImageLayout(ImageHandleInfo imageInfo, vk::ImageLayout fromLayout, vk::ImageLayout toLayout)
 {
-	auto resourceAspectMask = DetermineTransitionResourceAccessFlags(imageInfo.format, toLayout);
-	vk::ImageSubresourceRange imageSubresourceRange{resourceAspectMask, 0u, imageInfo.imageMipLevels, 0u, 1u};
+	vk::ImageAspectFlags resourceAspectMask = DetermineTransitionResourceAccessFlags(imageInfo.format, toLayout);
+	vk::ImageSubresourceRange imageSubresourceRange(resourceAspectMask, 0u, imageInfo.imageMipLevels, 0u, 1u);
 	try
 	{
 		auto [srcMask, srcPipe] = DetermineTransitionBarrierSourceFlags(fromLayout);
@@ -136,12 +137,12 @@ void VulkanImageManager::TransitionImageLayout(ImageHandleInfo imageInfo, vk::Im
 	}
 }
 
-vk::AccessFlags VulkanImageManager::DetermineTransitionResourceAccessFlags(vk::Format srcFormat, vk::ImageLayout to)
+vk::ImageAspectFlags VulkanImageManager::DetermineTransitionResourceAccessFlags(vk::Format srcFormat, vk::ImageLayout to)
 {
-	vk::AccessFlags accessFlags{vk::ImageAspectFlagBits::eColor};
+	vk::ImageAspectFlags accessFlags{vk::ImageAspectFlagBits::eColor};
 	if (to == vk::ImageLayout::eDepthStencilAttachmentOptimal)
 	{
-		accessFlags = hasStencilComponent(srcFormat) ? vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil : vk::ImageAspectFlagBits::eDepth;
+		accessFlags = HasStencilComponent(srcFormat) ? vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil : vk::ImageAspectFlagBits::eDepth;
 	}
 	return accessFlags;
 }
@@ -256,12 +257,12 @@ void VulkanImageManager::Init(vk::Device device, vk::PhysicalDevice physDevice)
 	}
 }
 
-VulkanImageManager::VulkanMemoryManager(vk::Device device, vk::PhysicalDevice physDevice)
+VulkanImageManager::VulkanImageManager(vk::Device device, vk::PhysicalDevice physDevice)
 	: logicalDevice{device}, physicalDevice{physDevice}
 {
 }
 
-bool VulkanImageManager::hasStencilComponent(vk::Format format)
+bool VulkanImageManager::HasStencilComponent(vk::Format format)
 {
 	return format == vk::Format::eD32SfloatS8Uint || format == vk::Format::eD24UnormS8Uint;
 }
