@@ -10,7 +10,6 @@ endif ()
 # Set value to suppress the CMake warnings that vcpkg will emit while in VS2019
 set(VCPKG_SUPPRESS_INSTALLED_LIBRARIES_WARNING TRUE)
 
-set(HUNTER_PACKAGES glfw3 stb glm Assimp VulkanMemoryAllocator)
 # Import in HunterGate file for using Hunter
 include("cmake/HunterGate.cmake")
 HunterGate(
@@ -24,18 +23,23 @@ project(DnDIdea)
 find_package(OpenGL REQUIRED)
 find_package(Vulkan REQUIRED)
 
-set(CMAKE_FIND_PACKAGE_PREFER_CONFIG TRUE)
-
 # glfw used for windowing
+hunter_add_package(glfw)
 find_package(glfw3 REQUIRED)
 # stb used for image loading
+hunter_add_package(stb)
 find_package(stb REQUIRED)
 # glm used for vector and matrix operations
+hunter_add_package(glm)
 find_package(glm REQUIRED)
 # assimp used for model loading
+hunter_add_package(Assimp)
 find_package(Assimp REQUIRED)
 # VMA used for GPU memory management
+hunter_add_package(VulkanMemoryAllocator)
 find_package(VulkanMemoryAllocator REQUIRED)
+
+
 
 if (MSVC)
 #    CMAKE_CXX_FLAGS is intentionally overridden here as there have been problems with compiler flags when using
