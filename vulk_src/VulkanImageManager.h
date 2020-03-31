@@ -47,7 +47,7 @@ public:
 	void DestroyImageView(vk::ImageView view);
 	void DestroySampler(vk::Sampler sampler);
 
-	VulkanImageManager *getInstance();
+	static VulkanImageManager *getInstance();
 	static void Init(vk::Device device, vk::PhysicalDevice physDevice);
 	static void Destroy();
 };
