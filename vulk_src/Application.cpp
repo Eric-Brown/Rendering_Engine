@@ -1073,9 +1073,11 @@ Application::Application() = default;
 void Application::initGlobalVmaAllocator()
 {
 	VulkanMemoryManager::Init(device, physicalDevice, commandPool, graphicsQueue);
+	VulkanImageManager::Init(device, physicalDevice);
 }
 
 void Application::destroyGlobalAllocator()
 {
 	VulkanMemoryManager::Destroy();
+	VulkanImageManager::Destroy();
 }

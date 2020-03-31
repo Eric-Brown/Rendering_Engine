@@ -28,6 +28,7 @@ static const char *const PIPELINE_LAYOUT_CREATE_FAIL_MSG = "Failed to create pip
 static const char *const PIPELINE_CREATE_FAIL_MSG = "Failed to create graphics pipeline!";
 
 #include "VulkanMemoryManager.h"
+#include "VulkanImageManager.h"
 #include "Vertex.h"
 #include "Model.h"
 
