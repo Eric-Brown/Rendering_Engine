@@ -6,10 +6,7 @@
 
 std::tuple<vk::Buffer, VmaAllocation> VulkanMemoryManager::initializeStagingBuffer(void *data, size_t dataSize)
 {
-	vk::Buffer stagingBuffer;
-	VmaAllocation stagingBufferAllocation;
-	createBuffer(dataSize, vk::BufferUsageFlagBits::eTransferSrc, VMA_MEMORY_USAGE_CPU_ONLY, stagingBuffer,
-				 stagingBufferAllocation);
+	auto [stagingBuffer, stagingBufferAllocation] = createBuffer(dataSize, vk::BufferUsageFlagBits::eTransferSrc, VMA_MEMORY_USAGE_CPU_ONLY);
 	void *ptrGpuMemory{};
 	vmaMapMemory(allocator, stagingBufferAllocation, &ptrGpuMemory);
 	memcpy(ptrGpuMemory, data, dataSize);
@@ -26,18 +23,18 @@ std::tuple<vk::Buffer, VmaAllocation> VulkanMemoryManager::createBuffer(vk::Devi
 	VkBuffer vkCBuffer;
 	VmaAllocation bufferAllocation;
 	vmaCreateBuffer(allocator, &vkCBufferInfo, &allocationCreateInfo, &vkCBuffer, &bufferAllocation, nullptr);
-	buffer = vkCBuffer;
-	return std::make_tuple<vk::Buffer, VmaAllocation>(buffer, bufferAllocation);
+	vk::Buffer buffer = vkCBuffer;
+	return std::tuple<vk::Buffer, VmaAllocation>(buffer, bufferAllocation);
 }
 
 std::tuple<vk::Buffer, VmaAllocation> VulkanMemoryManager::StageData(void *data, size_t dataSize)
 {
 	auto [buffer, allocation] = createBuffer(dataSize, vk::BufferUsageFlagBits::eTransferSrc, VMA_MEMORY_USAGE_CPU_ONLY);
 	void *ptrGpuMemory{};
-	vmaMapMemory(allocator, stagingBufferAllocation, &ptrGpuMemory);
+	vmaMapMemory(allocator, allocation, &ptrGpuMemory);
 	memcpy(ptrGpuMemory, data, dataSize);
-	vmaUnmapMemory(allocator, stagingBufferAllocation);
-	return std::make_tuple(stagingBuffer, stagingBufferAllocation);
+	vmaUnmapMemory(allocator, allocation);
+	return std::make_tuple(buffer, allocation);
 }
 
 VulkanMemoryManager *VulkanMemoryManager::getInstance()
@@ -107,7 +104,7 @@ VulkanMemoryManager::VulkanMemoryManager(vk::Device device, vk::PhysicalDevice p
 	vmaCreateAllocator(&allocatorCreateInfo, &allocator);
 }
 
-VmaAllocator GetAllocator()
+VmaAllocator VulkanMemoryManager::GetAllocator()
 {
 	return allocator;
 }
