@@ -46,6 +46,7 @@ void VulkanImageManager::GenerateMipmaps(const ImageHandleInfo &info)
 	for (uint32_t i = 1; i < info.imageMipLevels; i++)
 	{
 		imgToXferSrcBarrier.subresourceRange.baseMipLevel = i - 1;
+		imgToReadOnlyBarrier.subresourceRange.baseMipLevel = i - 1;
 		commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eTransfer, {},
 									  0, nullptr, 0, nullptr, 1, &imgToXferSrcBarrier);
 		const std::array<vk::Offset3D, 2> srcOffset{vk::Offset3D{0, 0, 0},
