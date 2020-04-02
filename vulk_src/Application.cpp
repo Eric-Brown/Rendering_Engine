@@ -969,61 +969,6 @@ void Application::createGraphicsPipelineFromDescriptions(vk::VertexInputBindingD
 	vkDestroyShaderModule(device, fraMod, nullptr);
 }
 
-void Application::generateMipmaps(vk::Image image, vk::Format imageFormat, int32_t texWidth, int32_t texHeight,
-								  uint32_t inMipLevels)
-{
-	// Check if image format supports linear blitting
-	vk::FormatProperties formatProperties;
-	physicalDevice.getFormatProperties(imageFormat, &formatProperties);
-	if (!(formatProperties.optimalTilingFeatures & vk::FormatFeatureFlagBits::eSampledImageFilterLinear))
-	{
-		throw std::runtime_error(TEXTURE_FORMAT_NOT_SUPPORT_BLITTING_MSG);
-	}
-	vk::CommandBuffer commandBuffer = beginSingleTimeCommands();
-	vk::ImageMemoryBarrier barrier({}, {}, {}, {}, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, image,
-								   {vk::ImageAspectFlagBits::eColor, {}, 1, 0, 1});
-	int32_t mipWidth = texWidth;
-	int32_t mipHeight = texHeight;
-	for (uint32_t i = 1; i < inMipLevels; i++)
-	{
-		barrier.subresourceRange.baseMipLevel = i - 1;
-		barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
-		barrier.newLayout = vk::ImageLayout::eTransferSrcOptimal;
-		barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
-		barrier.dstAccessMask = vk::AccessFlagBits::eTransferRead;
-		commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eTransfer, {},
-									  0, nullptr, 0, nullptr, 1, &barrier);
-		const std::array<vk::Offset3D, 2> srcOffset{vk::Offset3D{0, 0, 0},
-													vk::Offset3D{mipWidth, mipHeight, 1}};
-		const std::array<vk::Offset3D, 2> dstOffset{vk::Offset3D{0, 0, 0},
-													vk::Offset3D{mipWidth > 1 ? mipWidth / 2 : 1,
-																 mipHeight > 1 ? mipHeight / 2 : 1, 1}};
-		vk::ImageBlit blit({vk::ImageAspectFlagBits::eColor, i - 1, 0, 1}, srcOffset,
-						   {vk::ImageAspectFlagBits::eColor, i, 0, 1}, dstOffset);
-		commandBuffer.blitImage(image, vk::ImageLayout::eTransferSrcOptimal,
-								image, vk::ImageLayout::eTransferDstOptimal,
-								1, &blit, vk::Filter::eLinear);
-		barrier.oldLayout = vk::ImageLayout::eTransferSrcOptimal;
-		barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-		barrier.srcAccessMask = vk::AccessFlagBits::eTransferRead;
-		barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
-		commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader,
-									  {}, 0, nullptr, 0, nullptr, 1, &barrier);
-		if (mipWidth > 1)
-			mipWidth /= 2;
-		if (mipHeight > 1)
-			mipHeight /= 2;
-	}
-	barrier.subresourceRange.baseMipLevel = inMipLevels - 1;
-	barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
-	barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-	barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
-	barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
-	commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader, {},
-								  0, nullptr, 0, nullptr, 1, &barrier);
-	endSingleTimeCommands(commandBuffer);
-}
-
 vk::SampleCountFlagBits Application::getMaxUsableSampleCount()
 {
 	vk::PhysicalDeviceProperties physicalDeviceProperties;
