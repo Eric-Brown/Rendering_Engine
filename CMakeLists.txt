@@ -23,9 +23,11 @@ project(DnDIdea)
 find_package(OpenGL REQUIRED)
 find_package(Vulkan REQUIRED)
 
+# set(glfw3_DIR "/usr/local/lib/cmake/glfw3")
+
 # glfw used for windowing
-hunter_add_package(glfw)
-find_package(glfw3 REQUIRED)
+# hunter_add_package(glfw)
+find_package(glfw3 3.4 REQUIRED)
 # stb used for image loading
 hunter_add_package(stb)
 find_package(stb REQUIRED)
