@@ -234,8 +234,6 @@ private:
 	vk::ImageView
 	createImageView(vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags, uint32_t mipLevels);
 
-	bool hasStencilComponent(vk::Format format);
-
 	vk::Format findDepthFormat();
 
 	vk::Format

@@ -286,11 +286,6 @@ vk::Format Application::findDepthFormat()
 		vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eDepthStencilAttachment);
 }
 
-bool Application::hasStencilComponent(vk::Format format)
-{
-	return format == vk::Format::eD32SfloatS8Uint || format == vk::Format::eD24UnormS8Uint;
-}
-
 vk::ImageView Application::createImageView(vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags,
 										   uint32_t inMipLevels)
 {
@@ -413,7 +408,7 @@ void Application::transitionImageLayout(vk::Image image, vk::Format format, vk::
 	{
 		barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
 
-		if (hasStencilComponent(format))
+		if (VulkanImageManager::HasStencilComponent(format))
 		{
 			barrier.subresourceRange.aspectMask |= vk::ImageAspectFlagBits::eStencil;
 		}

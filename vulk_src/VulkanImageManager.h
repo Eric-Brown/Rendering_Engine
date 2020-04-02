@@ -31,7 +31,6 @@ private:
 	std::string GetImageLayoutName(vk::ImageLayout layout);
 	void ThrowInvalidTransitionError(vk::ImageLayout from, vk::ImageLayout to);
 	void CopyBufferToImage(vk::Buffer buffer, const ImageHandleInfo &info);
-	bool HasStencilComponent(vk::Format format);
 	void ThrowSTBI_Error(const std::string &fName);
 
 public:
@@ -45,6 +44,7 @@ public:
 	void DestroySampler(vk::Sampler sampler);
 	void TransitionImageLayout(ImageHandleInfo imageInfo, vk::ImageLayout fromLayout, vk::ImageLayout toLayout);
 	static VulkanImageManager *getInstance();
+	static bool HasStencilComponent(vk::Format format);
 	static void Init(vk::Device device, vk::PhysicalDevice physDevice);
 	static void Destroy();
 };
