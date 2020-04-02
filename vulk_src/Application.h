@@ -220,13 +220,6 @@ private:
 
 	void createColorResources();
 
-	void
-	createImage(uint32_t width, uint32_t height, uint32_t imageMipLevels, vk::SampleCountFlagBits numSamples,
-				vk::Format format,
-				vk::ImageTiling tiling,
-				vk::ImageUsageFlags usage,
-				VmaMemoryUsage memUsage, vk::Image &image, VmaAllocation &imageMemory);
-
 	vk::CommandBuffer beginSingleTimeCommands();
 
 	void endSingleTimeCommands(vk::CommandBuffer commandBuffer);

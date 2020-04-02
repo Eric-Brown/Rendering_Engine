@@ -251,12 +251,12 @@ void Application::createInstance()
 
 void Application::createDepthResources()
 {
-	vk::Format depthFormat = findDepthFormat();
-	createImage(swapChainExtent.width, swapChainExtent.height, 1, msaaSamples, depthFormat, vk::ImageTiling::eOptimal,
-				vk::ImageUsageFlagBits::eDepthStencilAttachment, VMA_MEMORY_USAGE_GPU_ONLY, depthImage,
-				depthImageMemory);
-	depthImageView = createImageView(depthImage, depthFormat, vk::ImageAspectFlagBits::eDepth, 1);
-	transitionImageLayout(depthImage, depthFormat, vk::ImageLayout::eUndefined,
+	vk::ImageCreateInfo imageInfo{{}, vk::ImageType::e2D, findDepthFormat(), vk::Extent3D{swapChainExtent, 1}, 1, 1, msaaSamples, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::SharingMode::eExclusive, {}, {}, {}};
+	VmaAllocationCreateInfo allocationCreateInfo{};
+	allocationCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+	std::tie(depthImage, depthImageMemory) = VulkanImageManager::getInstance()->CreateImageBuffer(imageInfo, allocationCreateInfo);
+	depthImageView = createImageView(depthImage, findDepthFormat(), vk::ImageAspectFlagBits::eDepth, 1);
+	transitionImageLayout(depthImage, findDepthFormat(), vk::ImageLayout::eUndefined,
 						  vk::ImageLayout::eDepthStencilAttachmentOptimal, 1);
 }
 
@@ -311,21 +311,6 @@ vk::CommandBuffer Application::beginSingleTimeCommands()
 	vk::CommandBufferBeginInfo beginInfo{vk::CommandBufferUsageFlagBits::eOneTimeSubmit};
 	commandBuffer.begin(beginInfo);
 	return commandBuffer;
-}
-
-void Application::createImage(uint32_t width, uint32_t height, uint32_t imageMipLevels,
-							  vk::SampleCountFlagBits numSamples,
-							  vk::Format format,
-							  vk::ImageTiling tiling,
-							  vk::ImageUsageFlags usage, VmaMemoryUsage memUsage, vk::Image &image,
-							  VmaAllocation &imageMemory)
-{
-	vk::ImageCreateInfo imageInfo{{}, vk::ImageType::e2D, format, vk::Extent3D{width, height, 1}, imageMipLevels, 1, numSamples, tiling, usage, vk::SharingMode::eExclusive, {}, {}, {}};
-	VmaAllocationCreateInfo allocationCreateInfo{};
-	allocationCreateInfo.usage = memUsage;
-	auto [retImg, imgAlloc] = VulkanImageManager::getInstance()->CreateImageBuffer(imageInfo, allocationCreateInfo);
-	image = retImg;
-	imageMemory = imgAlloc;
 }
 
 void Application::createDescriptorSets()
@@ -1000,9 +985,10 @@ vk::SampleCountFlagBits Application::getMaxUsableSampleCount()
 void Application::createColorResources()
 {
 	vk::Format colorFormat = swapChainImageFormat;
-	createImage(swapChainExtent.width, swapChainExtent.height, 1, msaaSamples, colorFormat, vk::ImageTiling::eOptimal,
-				vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment,
-				VMA_MEMORY_USAGE_GPU_ONLY, colorImage, colorImageMemory);
+	vk::ImageCreateInfo imageInfo{{}, vk::ImageType::e2D, swapChainImageFormat, vk::Extent3D{swapChainExtent, 1}, 1, 1, msaaSamples, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment, vk::SharingMode::eExclusive, {}, {}, {}};
+	VmaAllocationCreateInfo allocationCreateInfo{};
+	allocationCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+	std::tie(colorImage, colorImageMemory) = VulkanImageManager::getInstance()->CreateImageBuffer(imageInfo, allocationCreateInfo);
 	colorImageView = createImageView(colorImage, colorFormat, vk::ImageAspectFlagBits::eColor, 1);
 }
 
