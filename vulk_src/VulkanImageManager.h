@@ -22,12 +22,9 @@ private:
 	static inline VulkanImageManager *vimInstance{};
 	vk::Device logicalDevice;
 	vk::PhysicalDevice physicalDevice;
-
 	VulkanImageManager(vk::Device device, vk::PhysicalDevice physDevice);
-
 	std::tuple<void *, vk::ImageCreateInfo> LoadImageFile(const std::string& fName);
 	vk::DeviceSize CalculateImageSize(const vk::ImageCreateInfo &info);
-	void TransitionImageLayout(ImageHandleInfo imageInfo, vk::ImageLayout fromLayout, vk::ImageLayout toLayout);
 	vk::ImageAspectFlags DetermineTransitionResourceAccessFlags(vk::Format srcFormat, vk::ImageLayout to);
 	std::tuple<vk::AccessFlags, vk::PipelineStageFlags> DetermineTransitionBarrierDestinationFlags(vk::ImageLayout to);
 	std::tuple<vk::AccessFlags, vk::PipelineStageFlags> DetermineTransitionBarrierSourceFlags(vk::ImageLayout from);
@@ -46,7 +43,7 @@ public:
 	void DestroyImage(vk::Image img, VmaAllocation imgMemory);
 	void DestroyImageView(vk::ImageView view);
 	void DestroySampler(vk::Sampler sampler);
-
+	void TransitionImageLayout(ImageHandleInfo imageInfo, vk::ImageLayout fromLayout, vk::ImageLayout toLayout);
 	static VulkanImageManager *getInstance();
 	static void Init(vk::Device device, vk::PhysicalDevice physDevice);
 	static void Destroy();
