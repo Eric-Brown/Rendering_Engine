@@ -220,10 +220,6 @@ private:
 
 	void createColorResources();
 
-	vk::CommandBuffer beginSingleTimeCommands();
-
-	void endSingleTimeCommands(vk::CommandBuffer commandBuffer);
-
 	vk::ImageView
 	createImageView(vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags, uint32_t mipLevels);
 

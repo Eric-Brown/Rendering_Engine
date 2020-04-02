@@ -294,25 +294,6 @@ vk::ImageView Application::createImageView(vk::Image image, vk::Format format, v
 	return device.createImageView(viewInfo);
 }
 
-void Application::endSingleTimeCommands(vk::CommandBuffer commandBuffer)
-{
-	commandBuffer.end();
-	vk::SubmitInfo submitInfo{{}, {}, {}, 1, &commandBuffer};
-	graphicsQueue.submit(1, &submitInfo, {});
-	graphicsQueue.waitIdle();
-	device.freeCommandBuffers(commandPool, 1, &commandBuffer);
-}
-
-vk::CommandBuffer Application::beginSingleTimeCommands()
-{
-	vk::CommandBufferAllocateInfo allocInfo{commandPool, vk::CommandBufferLevel::ePrimary, 1};
-	auto buffers{device.allocateCommandBuffers(allocInfo)};
-	vk::CommandBuffer commandBuffer{buffers[0]};
-	vk::CommandBufferBeginInfo beginInfo{vk::CommandBufferUsageFlagBits::eOneTimeSubmit};
-	commandBuffer.begin(beginInfo);
-	return commandBuffer;
-}
-
 void Application::createDescriptorSets()
 {
 	std::vector<vk::DescriptorSetLayout> layouts(swapChainImages.size(), descriptorSetLayout);
@@ -371,19 +352,19 @@ void Application::createDescriptorSetLayout()
 
 void Application::copyBufferToImage(vk::Buffer buffer, vk::Image image, uint32_t width, uint32_t height)
 {
-	vk::CommandBuffer commandBuffer = beginSingleTimeCommands();
+	vk::CommandBuffer commandBuffer = VulkanMemoryManager::getInstance()->beginSingleTimeCommands();
 	vk::ImageSubresourceLayers subresource{vk::ImageAspectFlagBits::eColor, 0, 0, 1};
 	vk::Offset3D imageOffset{0, 0, 0};
 	vk::Extent3D imageExtent{width, height, 1};
 	vk::BufferImageCopy region(0, 0, 0, subresource, imageOffset, imageExtent);
 	commandBuffer.copyBufferToImage(buffer, image, vk::ImageLayout::eTransferDstOptimal, 1, &region);
-	endSingleTimeCommands(commandBuffer);
+	VulkanMemoryManager::getInstance()->endSingleTimeCommands(commandBuffer);
 }
 
 void Application::transitionImageLayout(vk::Image image, vk::Format format, vk::ImageLayout oldLayout,
 										vk::ImageLayout newLayout, uint32_t inMipLevels)
 {
-	vk::CommandBuffer commandBuffer = beginSingleTimeCommands();
+	vk::CommandBuffer commandBuffer = VulkanMemoryManager::getInstance()->beginSingleTimeCommands();
 	vk::ImageSubresourceRange imageSubresourceRange({}, 0, inMipLevels, 0, 1);
 	vk::ImageMemoryBarrier barrier({}, {}, oldLayout, newLayout, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
 								   image, imageSubresourceRange);
@@ -429,7 +410,7 @@ void Application::transitionImageLayout(vk::Image image, vk::Format format, vk::
 		throw std::invalid_argument("unsupported layout transition!");
 	}
 	commandBuffer.pipelineBarrier(sourceStage, destinationStage, {}, 0, nullptr, 0, nullptr, 1, &barrier);
-	endSingleTimeCommands(commandBuffer);
+	VulkanMemoryManager::getInstance()->endSingleTimeCommands(commandBuffer);
 }
 
 void Application::createSyncObjects()
