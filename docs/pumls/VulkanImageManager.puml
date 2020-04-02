@@ -1,48 +1,53 @@
-@startuml VulkanImageManager
-class VulkanImageManager{
-	{static} void Init()
-	- allocator: VmaAllocator
-	- logicalDevice: Device
-	- physicalDevice: PhysicalDevice
-	- commandPool: CommandPool
-	- graphicsQueue: Queue
-	stbi_load, stbifree...uses createimagefromdata (maybe change ?)
-	+ CreateImageFromFile(fName: string) :(Image, Allocation)
-	
-	+ CreateImageFromData(data, dSize, info, usage) :(Image, Allocation)
-	+ void DestroyImage(Image img, VmaAllocation imgMemory)
-	+ void DestroyImageView(ImageView view)
-	+ void DestroySampler(Sampler sampler)
-	+ ImageView CreateImageView(ImageViewCreateInfo info)
-	+ Sampler CreateImageSampler(SamplerCreateInfo info)
-	+ tuple<Image, VmaAllocation> createImage(VkImageCreateInfo imageInfo, VmaAllocationCreateInfo allocationCreateInfo)
-	- transitionImageLayout(Image image, Format format, ImageLayout oldLayout, ImageLayout newLayout, uint32_t inMipLevels)
-	- copyBufferToImage(Buffer buffer, Image image, ImageCreateInfo info)
-	- generateMipmaps(Image image, ImageCreateInfo info)
-	- hasStencilComponent(Format format): bool
+@startuml
+
+
+!define DARKGREEN
+!includeurl https://raw.githubusercontent.com/Drakemor/RedDress-PlantUML/master/style.puml
+
+
+
+/' Objects '/
+
+class VulkanImageManager {
+	-logicalDevice : vk::Device
+	-physicalDevice : vk::PhysicalDevice
+	__
+	-CalculateImageSize(const vk::ImageCreateInfo& info) : vk::DeviceSize
+	-CopyBufferToImage(vk::Buffer buffer, const ImageHandleInfo& info) : void
+	-DetermineTransitionBarrierDestinationFlags(vk::ImageLayout to) : std::tuple<vk::AccessFlags , vk::PipelineStageFlags>
+	-DetermineTransitionBarrierSourceFlags(vk::ImageLayout from) : std::tuple<vk::AccessFlags , vk::PipelineStageFlags>
+	-DetermineTransitionResourceAccessFlags(vk::Format srcFormat, vk::ImageLayout to) : vk::ImageAspectFlags
+	-GetImageLayoutName(vk::ImageLayout layout) : std::string
+	-HasStencilComponent(vk::Format format) : bool
+	-LoadImageFile(const std::string& fName) : std::tuple<void* , vk::ImageCreateInfo>
+	-ThrowInvalidTransitionError(vk::ImageLayout from, vk::ImageLayout to) : void
+	-ThrowSTBI_Error(const std::string& fName) : void
+	-TransitionImageLayout(ImageHandleInfo imageInfo, vk::ImageLayout fromLayout, vk::ImageLayout toLayout) : void
+	-VulkanImageManager(vk::Device device, vk::PhysicalDevice physDevice)
+	..Public Methods..
+	+{static} Destroy() : void
+	+{static} getInstance() : VulkanImageManager*
+	+{static} Init(vk::Device device, vk::PhysicalDevice physDevice) : void
+	+CreateImageBuffer(VkImageCreateInfo info, VmaAllocationCreateInfo allocationInfo) : std::tuple<vk::Image , VmaAllocation>
+	+CreateImageFromFile(std::string fName) : ImageHandleInfo
+	+CreateImageSampler(vk::SamplerCreateInfo info) : vk::Sampler
+	+CreateImageView(vk::ImageViewCreateInfo info) : vk::ImageView
+	+DestroyImage(vk::Image img, VmaAllocation imgMemory) : void
+	+DestroyImageView(vk::ImageView view) : void
+	+DestroySampler(vk::Sampler sampler) : void
+	+GenerateMipmaps(const ImageHandleInfo& info) : void
 }
-note as N1
-	Will need allocator accessor
-	create image as VMM current
-	destroy image as VMM current
-	neither buffer nor image manager should control allocator lifetime
-	transition image layout will be needed
-	knowledge about image formats are needed
-	know how to copy buffer to image
-	know how to generate mipmaps
-	create/destroy image view
-	create/destroy image sampler
-	resource manager must know how to deal with staging data
-end note
-note as N2
-	create image:
-		allocate cpu data for loading
-		load cpu data to group
-		free cpu data
-		create vulkan image
-		set image to be destination optimal for xfer
-		copy from staging to destination
-		release staging
-		return image information
-end note
+
+
+
+/' Inheritance relationships '/
+
+
+
+
+/' Aggregation relationships '/
+
+
+
+
 @enduml

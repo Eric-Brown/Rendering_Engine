@@ -1,4 +1,6 @@
 @startuml UniformBufferObject
+!define DARKGREEN
+!includeurl https://raw.githubusercontent.com/Drakemor/RedDress-PlantUML/master/style.puml
 class UniformBufferObject
 {
 	{alignas(16)} mat4 model;

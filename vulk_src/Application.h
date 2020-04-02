@@ -31,13 +31,7 @@ static const char *const PIPELINE_CREATE_FAIL_MSG = "Failed to create graphics p
 #include "VulkanImageManager.h"
 #include "Vertex.h"
 #include "Model.h"
-
-struct UniformBufferObject
-{
-	alignas(16) glm::mat4 model;
-	alignas(16) glm::mat4 view;
-	alignas(16) glm::mat4 proj;
-};
+#include "UniformBufferObject.hpp"
 
 class Application
 {

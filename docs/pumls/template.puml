@@ -1,0 +1,6 @@
+{% extends 'default.puml' %}
+
+{% block preamble %}
+!define DARKGREEN
+!includeurl https://raw.githubusercontent.com/Drakemor/RedDress-PlantUML/master/style.puml
+{% endblock %}

@@ -1,39 +1,53 @@
-@startuml Model
-class Model{
-	-textureFileName{}: string
-	-mesh{}: vector<Vertex>
-	-meshIndexes{}: vector<uint32_t>
-	-model_transform{1.0f}: mat4
-	-vertexBuffer{}: tuple<Buffer, VmaAllocation>
-	-indexBuffer{}: tuple<Buffer, VmaAllocation>
-	-textureBuffer{}: tuple<Image, VmaAllocation>
-	-textureImageView{}: ImageView
-	-textureSampler{}: Sampler
-	-mipLevels{}: uint32_t
+@startuml
+
+
+!define DARKGREEN
+!includeurl https://raw.githubusercontent.com/Drakemor/RedDress-PlantUML/master/style.puml
+
+
+
+/' Objects '/
+
+class Model {
 	__
-	- bool readModelFile(const string &pFile)
-	- void processSceneObject(const aiScene *scene)
-	- void createTextureImage()
-	- ImageView createImageView(Image image, Format format, ImageAspectFlags aspectFlags, uint32_t inMipLevels)
-	- void createTextureImageView()
-	- void createTextureSampler()
-	- void loadImageDataToGPU()
-	- void DestroyBufferIfExists(tuple<Buffer, VmaAllocation> buffer) {noexcept}
+	-createImageView(vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags, uint32_t inMipLevels) : vk::ImageView
+	-createTextureImage() : void
+	-createTextureImageView() : void
+	-createTextureSampler() : void
+	-DestroyBufferIfExists(std::tuple<vk::Buffer, VmaAllocation> buffer) : void
+	-loadImageDataToGPU() : void
+	-processSceneObject(const aiScene* scene) : void
+	-readModelFile(const std::string& pFile) : bool
 	..Public Methods..
-	+ Model(const string fName);
-	+ Model(const string fName, const string texFName);
-	+ ~Model() noexcept;
-	+ const tuple<Buffer, VmaAllocation> &GetMeshBuffer();
-	+ const tuple<Buffer, VmaAllocation> &GetIndicesBuffer();
-	+ const tuple<Image, VmaAllocation> &GetTextureBuffer();
-	+ const mat4 GetModelMatrix();
-	+ void ScaleModel(vec3 delta);
-	+ void TranslateModel(vec3 delta);
-	+ void RotateModel(vec3 axis, float theta);
-	+ const Sampler GetTextureSampler();
-	+ const ImageView GetTextureView();
-	+ uint32_t GetIndexCount();
-	+ const mat4 &GetModelTransform();
-	+ void loadDataToGPU();
+	+~Model()
+	+GetIndexCount() : uint32_t
+	+GetIndicesBuffer() : std::tuple<vk::Buffer , VmaAllocation>&
+	+GetMeshBuffer() : std::tuple<vk::Buffer , VmaAllocation>&
+	+GetModelMatrix() : glm::mat4
+	+GetModelTransform() : glm::mat4&
+	+GetTextureBuffer() : std::tuple<vk::Image , VmaAllocation>&
+	+GetTextureSampler() : vk::Sampler
+	+GetTextureView() : vk::ImageView
+	+loadDataToGPU() : void
+	+Model(const std::string fName, const std::string texFName)
+	+Model(const std::string fName)
+	+RotateModel(glm::vec3 axis, float theta) : void
+	+ScaleModel(glm::vec3 delta) : void
+	+TranslateModel(glm::vec3 delta) : void
 }
+
+
+
+
+
+/' Inheritance relationships '/
+
+
+
+
+/' Aggregation relationships '/
+
+
+
+
 @enduml

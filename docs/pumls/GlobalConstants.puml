@@ -1,4 +1,6 @@
 @startuml Constants
+!define DARKGREEN
+!includeurl https://raw.githubusercontent.com/Drakemor/RedDress-PlantUML/master/style.puml
 class Constants{
 static const char *const COMMAND_POOL_FAIL_CREATE_MSG = "Failed to create command pool!";
 static const char *const FRAMEBUFFER_CREATE_FAIL_MSG = "Failed to create framebuffer";

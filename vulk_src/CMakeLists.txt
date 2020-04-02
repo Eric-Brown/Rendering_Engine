@@ -9,6 +9,7 @@ add_executable(${PROJECT_NAME} main.cpp
         Model.cpp Model.h
         VulkanMemoryManager.cpp VulkanMemoryManager.h
         VulkanImageManager.cpp VulkanImageManager.h
+        UniformBufferObject.hpp
         )
 target_link_libraries(${PROJECT_NAME} PRIVATE
         glfw glm Vulkan::Vulkan Assimp::assimp VulkanMemoryAllocator::VulkanMemoryAllocator)

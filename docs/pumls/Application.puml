@@ -1,113 +1,98 @@
-@startuml Application
+@startuml
+
+
+!define DARKGREEN
+!includeurl https://raw.githubusercontent.com/Drakemor/RedDress-PlantUML/master/style.puml
+
+
+
+/' Objects '/
+
 class Application {
-	- {static} inline constexpr array<const char *, 1> requiredDeviceExtensions{VK_KHR_SWAPCHAIN_EXTENSION_NAME}
-	- {static} inline constexpr array<const char *, 1> validationLayers{"VK_LAYER_KHRONOS_validation"}
-	- {static} const int WIDTH{800}
-	- {static} const int HEIGHT{600}
-	- {static} const int MAX_FRAMES_IN_FLIGHT = 2
-	- GLFWwindow *window{}
-	- Instance instance{}
-	- SurfaceKHR surface{}
-	- PhysicalDevice physicalDevice{}
-	- Device device{}
-	- DebugUtilsMessengerEXT debugMessenger{}
-	- SwapchainKHR swapChain{}
-	- vector<Image> swapChainImages{}
-	- Format swapChainImageFormat{}
-	- Extent2D swapChainExtent{}
-	- vector<ImageView> swapChainImageViews{}
-	- RenderPass renderPass{}
-	- DescriptorSetLayout descriptorSetLayout{}
-	- PipelineLayout pipelineLayout{}
-	- Pipeline graphicsPipeline{}
-	- Queue graphicsQueue{}
-	- Queue presentQueue{}
-	- vector<Framebuffer> swapChainFramebuffers{}
-	- CommandPool commandPool{}
-	- vector<CommandBuffer> commandBuffers{}
-	- vector<Semaphore> imageAvailableSemaphores{}
-	- vector<Semaphore> renderFinishedSemaphores{}
-	- vector<Fence> inFlightFences{}
-	- size_t currentFrame = 0
-	- bool framebufferResized{false}
-	- Image depthImage{}
-	- VmaAllocation depthImageMemory{}
-	- ImageView depthImageView{}
-	- Image colorImage{}
-	- VmaAllocation colorImageMemory{}
-	- ImageView colorImageView{}
-	- SampleCountFlagBits msaaSamples = e1
-	- vector<Buffer> uniformBuffers{}
-	- vector<VmaAllocation> uniformBuffersAllocations{}
-	- DescriptorPool descriptorPool{}
-	- vector<DescriptorSet> descriptorSets{}
-	- vector<unique_ptr<Model>> modelHandles{}
-	+ Application()
-	+ run(): void
-	- initWindow(): void
-	- initVulkan(): void
-	- mainLoop(): void
-	- cleanup(): void
-	- loadHandles(): void
-	- initVulkanBeforePipeline(): void
-	- createGraphicsPipeline(): void
-	- initGlobalVmaAllocator(): void
-	- initVulkanAfterPipeline(): void
-	- createInstance(): void
-	- setupDebugMessenger(): void
-	- createSurface(): void
-	- pickPhysicalDevice(): void
-	- createLogicalDevice(): void
-	- createSwapChain(): void
-	- createImageViews(): void
-	- createRenderPass(): void
-	- createDescriptorSetLayout(): void
-	- findQueueFamilies(PhysicalDevice device): QueueFamilyIndices
-	- querySwapChainSupport(PhysicalDevice device): SwapChainSupportDetails
-	- populateDebugMessengerCreateInfo(DebugUtilsMessengerCreateInfoEXT &createInfo): void const
-	- checkDeviceExtensionSupport(PhysicalDevice device): bool
-	- isDeviceSuitable(PhysicalDevice device): bool
-	- chooseSwapSurfaceFormat(const vector<SurfaceFormatKHR> &availableFormats): SurfaceFormatKHR
-	- chooseSwapPresentMode(const vector<PresentModeKHR> &availablePresentModes): PresentModeKHR
-	- chooseSwapExtent(const SurfaceCapabilitiesKHR &capabilities): Extent2D
-	- scoreDevice(PhysicalDevice device): size_t
-	- createGraphicsPipelineFromDescriptions(VertexInputBindingDescription &bindingDescription, array<VertexInputAttributeDescription, 3> &attributeDescriptions): void
-	- getMaxUsableSampleCount(): SampleCountFlagBits
-	- createFramebuffers(): void
-	- destroyGlobalAllocator(): void
-	- createCommandPool(): void
-	- cleanupSwapChain(): void
-	- recreateSwapChain(): void
-	- createCommandBuffers(): void
-	- createSyncObjects(): void
-	- transitionImageLayout(Image image, Format format, ImageLayout oldLayout, ImageLayout newLayout, uint32_t mipLevels): void
-	- copyBufferToImage(Buffer buffer, Image image, uint32_t width, uint32_t height): void
-	- createUniformBuffers(): void
-	- createDescriptorPool(): void
-	- createDescriptorSets(): void
-	- createColorResources(): void
-	- createImage(uint32_t width, uint32_t height, uint32_t imageMipLevels, SampleCountFlagBits numSamples, Format format, ImageTiling tiling, ImageUsageFlags usage, VmaMemoryUsage memUsage, Image &image, VmaAllocation &imageMemory): void
-	- beginSingleTimeCommands(): CommandBuffer
-	- endSingleTimeCommands(CommandBuffer commandBuffer): void
-	- createImageView(Image image, Format format, ImageAspectFlags aspectFlags, uint32_t mipLevels): ImageView
-	- hasStencilComponent(Format format): bool
-	- findDepthFormat(): Format
-	- generateMipmaps(Image image, Format imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels): void
-	- findSupportedFormat(const vector<Format> &candidates, ImageTiling tiling, FormatFeatureFlags features): Format
-	- createDepthResources(): void
-	- createApplicationInfo(): ApplicationInfo const
-	- createInstanceCreateInfo(ApplicationInfo &appInfo): InstanceCreateInfo
-	- validateExtensions(const vector<const char *> &toValidate): void const
-	- vector<const char *> getRequiredExtensions() const
-	- validateLayerSupport(): void
-	- {static} VKAPI_ATTR Bool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void *pUserData)
-	- updateUniformBuffer(uint32_t currentImage, mat4& model): void
-	- drawFrame(): void
-	- {static} void framebufferResizeCallback(GLFWwindow *window, int width, int height)
-	- {static} vector<char> readFile(const string &filename)
-	- createShaderModule(const vector<char> &code): ShaderModule
-	- cleanupImageResources(): void const
-	- tuple<Buffer, VmaAllocation> initializeStagingBuffer(void *data, DeviceSize dataSize)
-	- cleanupPipelineResources(): void const
+	-{static} MAX_FRAMES_IN_FLIGHT : static const int
+	__
+	-{static} debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) : VKAPI_ATTR vk::Bool32 VKAPI_CALL
+	-{static} framebufferResizeCallback(GLFWwindow* window, int width, int height) : void
+	-{static} readFile(const std::string& filename) : std::vector<char>
+	-beginSingleTimeCommands() : vk::CommandBuffer
+	-checkDeviceExtensionSupport(vk::PhysicalDevice device) : bool
+	-chooseSwapExtent(const vk::SurfaceCapabilitiesKHR& capabilities) : vk::Extent2D
+	-chooseSwapPresentMode(const std::vector<vk::PresentModeKHR>& availablePresentModes) : vk::PresentModeKHR
+	-chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats) : vk::SurfaceFormatKHR
+	-cleanup() : void
+	-cleanupImageResources() : void {query}
+	-cleanupPipelineResources() : void {query}
+	-cleanupSwapChain() : void
+	-copyBufferToImage(vk::Buffer buffer, vk::Image image, uint32_t width, uint32_t height) : void
+	-createApplicationInfo() : vk::ApplicationInfo {query}
+	-createColorResources() : void
+	-createCommandBuffers() : void
+	-createCommandPool() : void
+	-createDepthResources() : void
+	-createDescriptorPool() : void
+	-createDescriptorSetLayout() : void
+	-createDescriptorSets() : void
+	-createFramebuffers() : void
+	-createGraphicsPipeline() : void
+	-createGraphicsPipelineFromDescriptions(vk::VertexInputBindingDescription& bindingDescription, std::array<vk::VertexInputAttributeDescription, 3>& attributeDescriptions) : void
+	-createImage(uint32_t width, uint32_t height, uint32_t imageMipLevels, vk::SampleCountFlagBits numSamples, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, VmaMemoryUsage memUsage, vk::Image& image, VmaAllocation& imageMemory) : void
+	-createImageView(vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags, uint32_t mipLevels) : vk::ImageView
+	-createImageViews() : void
+	-createInstance() : void
+	-createInstanceCreateInfo(vk::ApplicationInfo& appInfo) : vk::InstanceCreateInfo
+	-createLogicalDevice() : void
+	-createRenderPass() : void
+	-createShaderModule(const std::vector<char>& code) : vk::ShaderModule
+	-createSurface() : void
+	-createSwapChain() : void
+	-createSyncObjects() : void
+	-createUniformBuffers() : void
+	-currentFrame : size_t
+	-destroyGlobalAllocator() : void
+	-drawFrame() : void
+	-endSingleTimeCommands(vk::CommandBuffer commandBuffer) : void
+	-findDepthFormat() : vk::Format
+	-findQueueFamilies(vk::PhysicalDevice device) : QueueFamilyIndices
+	-findSupportedFormat(const std::vector<vk::Format>& candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features) : vk::Format
+	-generateMipmaps(vk::Image image, vk::Format imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels) : void
+	-getMaxUsableSampleCount() : vk::SampleCountFlagBits
+	-getRequiredExtensions() : [ [ nodiscard ] ] std::vector<const char*> {query}
+	-hasStencilComponent(vk::Format format) : bool
+	-initGlobalVmaAllocator() : void
+	-initializeStagingBuffer(void* data, vk::DeviceSize dataSize) : std::tuple<vk::Buffer , VmaAllocation>
+	-initVulkan() : void
+	-initVulkanAfterPipeline() : void
+	-initVulkanBeforePipeline() : void
+	-initWindow() : void
+	-isDeviceSuitable(vk::PhysicalDevice device) : bool
+	-loadHandles() : void
+	-mainLoop() : void
+	-msaaSamples : vk::SampleCountFlagBits
+	-pickPhysicalDevice() : void
+	-populateDebugMessengerCreateInfo(vk::DebugUtilsMessengerCreateInfoEXT& createInfo) : void {query}
+	-querySwapChainSupport(vk::PhysicalDevice device) : SwapChainSupportDetails
+	-recreateSwapChain() : void
+	-scoreDevice(vk::PhysicalDevice device) : size_t
+	-setupDebugMessenger() : void
+	-transitionImageLayout(vk::Image image, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, uint32_t mipLevels) : void
+	-updateUniformBuffer(uint32_t currentImage) : void
+	-validateExtensions(const std::vector<const char*>& toValidate) : void {query}
+	-validateLayerSupport() : void
+	..Public Methods..
+	+Application()
+	+run() : void
 }
+
+ 
+
+/' Inheritance relationships '/
+
+
+
+
+/' Aggregation relationships '/
+
+
+
+
 @enduml
