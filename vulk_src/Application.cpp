@@ -350,17 +350,6 @@ void Application::createDescriptorSetLayout()
 	descriptorSetLayout = device.createDescriptorSetLayout(layoutInfo);
 }
 
-void Application::copyBufferToImage(vk::Buffer buffer, vk::Image image, uint32_t width, uint32_t height)
-{
-	vk::CommandBuffer commandBuffer = VulkanMemoryManager::getInstance()->beginSingleTimeCommands();
-	vk::ImageSubresourceLayers subresource{vk::ImageAspectFlagBits::eColor, 0, 0, 1};
-	vk::Offset3D imageOffset{0, 0, 0};
-	vk::Extent3D imageExtent{width, height, 1};
-	vk::BufferImageCopy region(0, 0, 0, subresource, imageOffset, imageExtent);
-	commandBuffer.copyBufferToImage(buffer, image, vk::ImageLayout::eTransferDstOptimal, 1, &region);
-	VulkanMemoryManager::getInstance()->endSingleTimeCommands(commandBuffer);
-}
-
 void Application::createSyncObjects()
 {
 	imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);

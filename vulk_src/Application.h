@@ -207,8 +207,6 @@ private:
 
 	void createSyncObjects();
 
-	void copyBufferToImage(vk::Buffer buffer, vk::Image image, uint32_t width, uint32_t height);
-
 	void createUniformBuffers();
 
 	void createDescriptorPool();
