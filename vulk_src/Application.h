@@ -207,9 +207,6 @@ private:
 
 	void createSyncObjects();
 
-	void transitionImageLayout(vk::Image image, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout,
-							   uint32_t mipLevels);
-
 	void copyBufferToImage(vk::Buffer buffer, vk::Image image, uint32_t width, uint32_t height);
 
 	void createUniformBuffers();

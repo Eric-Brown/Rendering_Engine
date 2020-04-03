@@ -256,8 +256,8 @@ void Application::createDepthResources()
 	allocationCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 	std::tie(depthImage, depthImageMemory) = VulkanImageManager::getInstance()->CreateImageBuffer(imageInfo, allocationCreateInfo);
 	depthImageView = createImageView(depthImage, findDepthFormat(), vk::ImageAspectFlagBits::eDepth, 1);
-	transitionImageLayout(depthImage, findDepthFormat(), vk::ImageLayout::eUndefined,
-						  vk::ImageLayout::eDepthStencilAttachmentOptimal, 1);
+	VulkanImageManager::ImageHandleInfo info{depthImage, depthImageMemory, imageInfo};
+	VulkanImageManager::getInstance()->TransitionImageLayout(info, vk::ImageLayout::eUndefined,vk::ImageLayout::eDepthStencilAttachmentOptimal);
 }
 
 vk::Format Application::findSupportedFormat(const std::vector<vk::Format> &candidates, vk::ImageTiling tiling,
@@ -358,58 +358,6 @@ void Application::copyBufferToImage(vk::Buffer buffer, vk::Image image, uint32_t
 	vk::Extent3D imageExtent{width, height, 1};
 	vk::BufferImageCopy region(0, 0, 0, subresource, imageOffset, imageExtent);
 	commandBuffer.copyBufferToImage(buffer, image, vk::ImageLayout::eTransferDstOptimal, 1, &region);
-	VulkanMemoryManager::getInstance()->endSingleTimeCommands(commandBuffer);
-}
-
-void Application::transitionImageLayout(vk::Image image, vk::Format format, vk::ImageLayout oldLayout,
-										vk::ImageLayout newLayout, uint32_t inMipLevels)
-{
-	vk::CommandBuffer commandBuffer = VulkanMemoryManager::getInstance()->beginSingleTimeCommands();
-	vk::ImageSubresourceRange imageSubresourceRange({}, 0, inMipLevels, 0, 1);
-	vk::ImageMemoryBarrier barrier({}, {}, oldLayout, newLayout, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
-								   image, imageSubresourceRange);
-	vk::PipelineStageFlags sourceStage;
-	vk::PipelineStageFlags destinationStage;
-	if (newLayout == vk::ImageLayout::eDepthStencilAttachmentOptimal)
-	{
-		barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
-
-		if (VulkanImageManager::HasStencilComponent(format))
-		{
-			barrier.subresourceRange.aspectMask |= vk::ImageAspectFlagBits::eStencil;
-		}
-	}
-	else
-	{
-		barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-	}
-	if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eTransferDstOptimal)
-	{
-		barrier.setDstAccessMask(vk::AccessFlagBits::eTransferWrite);
-		sourceStage = vk::PipelineStageFlagBits::eTopOfPipe;
-		destinationStage = vk::PipelineStageFlagBits::eTransfer;
-	}
-	else if (oldLayout == vk::ImageLayout::eTransferDstOptimal &&
-			 newLayout == vk::ImageLayout::eShaderReadOnlyOptimal)
-	{
-		barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
-		barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
-		sourceStage = vk::PipelineStageFlagBits::eTransfer;
-		destinationStage = vk::PipelineStageFlagBits::eFragmentShader;
-	}
-	else if (oldLayout == vk::ImageLayout::eUndefined &&
-			 newLayout == vk::ImageLayout::eDepthStencilAttachmentOptimal)
-	{
-		barrier.dstAccessMask =
-			vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite;
-		sourceStage = vk::PipelineStageFlagBits::eTopOfPipe;
-		destinationStage = vk::PipelineStageFlagBits::eEarlyFragmentTests;
-	}
-	else
-	{
-		throw std::invalid_argument("unsupported layout transition!");
-	}
-	commandBuffer.pipelineBarrier(sourceStage, destinationStage, {}, 0, nullptr, 0, nullptr, 1, &barrier);
 	VulkanMemoryManager::getInstance()->endSingleTimeCommands(commandBuffer);
 }
 
