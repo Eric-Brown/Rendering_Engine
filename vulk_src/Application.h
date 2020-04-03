@@ -215,9 +215,6 @@ private:
 
 	void createColorResources();
 
-	vk::ImageView
-	createImageView(vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags, uint32_t mipLevels);
-
 	vk::Format findDepthFormat();
 
 	vk::Format

@@ -255,9 +255,11 @@ void Application::createDepthResources()
 	VmaAllocationCreateInfo allocationCreateInfo{};
 	allocationCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 	std::tie(depthImage, depthImageMemory) = VulkanImageManager::getInstance()->CreateImageBuffer(imageInfo, allocationCreateInfo);
-	depthImageView = createImageView(depthImage, findDepthFormat(), vk::ImageAspectFlagBits::eDepth, 1);
+	vk::ImageSubresourceRange iSubRR{vk::ImageAspectFlagBits::eDepth,0,1,0,1};
+	vk::ImageViewCreateInfo ivInfo{{}, depthImage, vk::ImageViewType::e2D, findDepthFormat(), {}, iSubRR};
+	depthImageView = VulkanImageManager::getInstance()->CreateImageView(ivInfo);
 	VulkanImageManager::ImageHandleInfo info{depthImage, depthImageMemory, imageInfo};
-	VulkanImageManager::getInstance()->TransitionImageLayout(info, vk::ImageLayout::eUndefined,vk::ImageLayout::eDepthStencilAttachmentOptimal);
+	VulkanImageManager::getInstance()->TransitionImageLayout(info, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
 }
 
 vk::Format Application::findSupportedFormat(const std::vector<vk::Format> &candidates, vk::ImageTiling tiling,
@@ -284,14 +286,6 @@ vk::Format Application::findDepthFormat()
 	return findSupportedFormat(
 		{vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint},
 		vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eDepthStencilAttachment);
-}
-
-vk::ImageView Application::createImageView(vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags,
-										   uint32_t inMipLevels)
-{
-	vk::ImageSubresourceRange subresourceRange{aspectFlags, 0, inMipLevels, 0, 1};
-	vk::ImageViewCreateInfo viewInfo{{}, image, vk::ImageViewType::e2D, format, {}, subresourceRange};
-	return device.createImageView(viewInfo);
 }
 
 void Application::createDescriptorSets()
@@ -503,7 +497,9 @@ void Application::createImageViews()
 	swapChainImageViews.clear();
 	std::transform(swapChainImages.begin(), swapChainImages.end(), std::back_inserter(swapChainImageViews),
 				   [&](const vk::Image &image) -> vk::ImageView {
-					   return createImageView(image, swapChainImageFormat, vk::ImageAspectFlagBits::eColor, 1);
+					   vk::ImageSubresourceRange iSubRR{vk::ImageAspectFlagBits::eColor,0,1,0,1};
+					   vk::ImageViewCreateInfo info{{}, image, vk::ImageViewType::e2D, swapChainImageFormat, {}, iSubRR};
+					   return VulkanImageManager::getInstance()->CreateImageView(info);
 				   });
 }
 
@@ -777,12 +773,12 @@ void Application::initVulkanBeforePipeline()
 	createSurface();
 	pickPhysicalDevice();
 	createLogicalDevice();
+	createCommandPool();
+	initGlobalVmaAllocator();
 	createSwapChain();
 	createImageViews();
 	createRenderPass();
 	createDescriptorSetLayout();
-	createCommandPool();
-	initGlobalVmaAllocator();
 }
 
 void Application::initVulkanAfterPipeline()
@@ -907,7 +903,9 @@ void Application::createColorResources()
 	VmaAllocationCreateInfo allocationCreateInfo{};
 	allocationCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 	std::tie(colorImage, colorImageMemory) = VulkanImageManager::getInstance()->CreateImageBuffer(imageInfo, allocationCreateInfo);
-	colorImageView = createImageView(colorImage, colorFormat, vk::ImageAspectFlagBits::eColor, 1);
+	vk::ImageSubresourceRange iSubRR{vk::ImageAspectFlagBits::eColor,0,1,0,1};
+	vk::ImageViewCreateInfo info{{}, colorImage, vk::ImageViewType::e2D, colorFormat, {}, iSubRR};
+	colorImageView = VulkanImageManager::getInstance()->CreateImageView(info);
 }
 
 Application::Application() = default;
