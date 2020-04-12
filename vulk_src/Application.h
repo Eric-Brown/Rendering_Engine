@@ -37,10 +37,13 @@ class Application
 {
 private:
 	//Constants
-	static inline constexpr std::array<const char *, 1> requiredDeviceExtensions{
-		VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+	static inline constexpr std::array<const char *, 2> requiredDeviceExtensions{
+		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+		VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME};
 	static inline constexpr std::array<const char *, 1> validationLayers{
 		"VK_LAYER_KHRONOS_validation"};
+	static inline constexpr std::array<vk::ValidationFeatureEnableEXT, 1> enables{vk::ValidationFeatureEnableEXT::eBestPractices};
+	static inline constexpr vk::ValidationFeaturesEXT features{static_cast<uint32_t>(enables.size()), enables.data()};
 	static const int WIDTH{800};
 	static const int HEIGHT{600};
 	static const int MAX_FRAMES_IN_FLIGHT = 2;

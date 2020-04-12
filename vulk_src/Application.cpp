@@ -59,12 +59,18 @@ void Application::drawFrame()
 	{
 		throw runtime_error("failed to acquire swap chain image");
 	}
+	//for view in views (only 1)
 	updateUniformBuffer(imageIndex);
+	device.resetFences(1, &inFlightFences[currentFrame]);
+	//for each shader (only 1)
+	//for each material (none atm)
+	//for each object ...
+
 	vk::Semaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
 	vk::PipelineStageFlags waitStages[] = {vk::PipelineStageFlagBits::eColorAttachmentOutput};
 	vk::Semaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
 	vk::SubmitInfo submitInfo(1, waitSemaphores, waitStages, 1, &commandBuffers[imageIndex], 1, signalSemaphores);
-	device.resetFences(1, &inFlightFences[currentFrame]);
+	
 	if (graphicsQueue.submit(1, &submitInfo, inFlightFences[currentFrame]) != vk::Result::eSuccess)
 	{
 		throw std::runtime_error("failed to submit draw command buffer!");
@@ -219,6 +225,7 @@ vk::InstanceCreateInfo Application::createInstanceCreateInfo(vk::ApplicationInfo
 {
 	vk::InstanceCreateInfo info({}, &appInfo, static_cast<uint32_t>(validationLayers.size()), validationLayers.data(),
 								{}, {});
+								info.setPNext(&features);
 	return info;
 }
 
@@ -255,7 +262,7 @@ void Application::createDepthResources()
 	VmaAllocationCreateInfo allocationCreateInfo{};
 	allocationCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 	std::tie(depthImage, depthImageMemory) = VulkanImageManager::getInstance()->CreateImageBuffer(imageInfo, allocationCreateInfo);
-	vk::ImageSubresourceRange iSubRR{vk::ImageAspectFlagBits::eDepth,0,1,0,1};
+	vk::ImageSubresourceRange iSubRR{vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1};
 	vk::ImageViewCreateInfo ivInfo{{}, depthImage, vk::ImageViewType::e2D, findDepthFormat(), {}, iSubRR};
 	depthImageView = VulkanImageManager::getInstance()->CreateImageView(ivInfo);
 	VulkanImageManager::ImageHandleInfo info{depthImage, depthImageMemory, imageInfo};
@@ -391,6 +398,7 @@ void Application::createCommandBuffers()
 			offsets.push_back(0);
 			commandBuffers[i].bindVertexBuffers(0, vertBuffs, offsets);
 			commandBuffers[i].bindIndexBuffer(std::get<0>(handle->GetIndicesBuffer()), offsets[0], vk::IndexType::eUint32);
+			//bind model data
 			commandBuffers[i].drawIndexed(handle->GetIndexCount(), 1, 0, 0, 0);
 			vertBuffs.clear();
 			offsets.clear();
@@ -497,7 +505,7 @@ void Application::createImageViews()
 	swapChainImageViews.clear();
 	std::transform(swapChainImages.begin(), swapChainImages.end(), std::back_inserter(swapChainImageViews),
 				   [&](const vk::Image &image) -> vk::ImageView {
-					   vk::ImageSubresourceRange iSubRR{vk::ImageAspectFlagBits::eColor,0,1,0,1};
+					   vk::ImageSubresourceRange iSubRR{vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1};
 					   vk::ImageViewCreateInfo info{{}, image, vk::ImageViewType::e2D, swapChainImageFormat, {}, iSubRR};
 					   return VulkanImageManager::getInstance()->CreateImageView(info);
 				   });
@@ -903,7 +911,7 @@ void Application::createColorResources()
 	VmaAllocationCreateInfo allocationCreateInfo{};
 	allocationCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 	std::tie(colorImage, colorImageMemory) = VulkanImageManager::getInstance()->CreateImageBuffer(imageInfo, allocationCreateInfo);
-	vk::ImageSubresourceRange iSubRR{vk::ImageAspectFlagBits::eColor,0,1,0,1};
+	vk::ImageSubresourceRange iSubRR{vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1};
 	vk::ImageViewCreateInfo info{{}, colorImage, vk::ImageViewType::e2D, colorFormat, {}, iSubRR};
 	colorImageView = VulkanImageManager::getInstance()->CreateImageView(info);
 }
