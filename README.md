@@ -20,3 +20,7 @@ Hunter will download and compile dependencies.
 If the **HUNTER_ROOT** environmental variable is not set, Hunter will put the dependencies in a default location.
 While most dependencies will be taken care of by Hunter, it is still required that you have both Vulkan compatible drivers, and the [Vulkan SDK](https://vulkan.lunarg.com/).
 
+NOTE:
+Current iteration of the project requires GLFW 3.4 which is NOT a release version.
+The reasoning is that GLFW 3.3 has a race condition bug on linux which causes a crash on window close.
+If you are trying to build from source, you will either need to manually compile the GLFW master branch, or revert back to 3.3 in the CMakeLists.txt file.
